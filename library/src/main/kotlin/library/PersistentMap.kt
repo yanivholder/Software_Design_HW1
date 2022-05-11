@@ -1,6 +1,6 @@
 package library
 
-interface Library <T> {
+interface PersistentMap <T> {
 
     /**
      *

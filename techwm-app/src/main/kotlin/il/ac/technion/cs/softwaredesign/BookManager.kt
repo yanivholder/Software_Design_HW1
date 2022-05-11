@@ -2,6 +2,14 @@ package il.ac.technion.cs.softwaredesign
 
 class BookManager {
 
+    val persistentMap: PersistentMap
+
+    init {
+        persistentMap = PersistentMapFactory.create()
+    }
+
+
+
     companion object {
         fun isIdExists(id: String): Boolean {
             return false;
@@ -20,4 +28,9 @@ class BookManager {
             return listOf();
         }
     }
+}
+
+class BookInfo co{
+    val description: String
+    val 
 }

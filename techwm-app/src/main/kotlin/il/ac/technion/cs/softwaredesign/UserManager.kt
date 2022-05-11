@@ -1,8 +1,8 @@
 package il.ac.technion.cs.softwaredesign
 
-import library.Library
+import library.PersistentMap
 
-class UserManager(lib: Library) {
+class UserManager(lib: PersistentMap) {
 
     companion object {
         fun isUsernameExists(username: String): Boolean {
