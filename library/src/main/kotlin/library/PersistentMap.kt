@@ -25,4 +25,12 @@ interface PersistentMap <T> {
      * @throws ?
      */
     fun exists(key: String): Boolean;
+
+    /**
+     *
+     * @param ?
+     *
+     * @throws ?
+     */
+    fun getAllMap(): Map<String, T>;
 }

@@ -1,10 +1,7 @@
 package library
 
-class PersistentMapFactroy {
+interface PersistentMapFactroy <T> {
 
-    companion object {
-        fun <T> createPersistentMap(): PersistentMap<T> {
-            return DefaultPersistentMap<T>();
-        }
-    }
+    fun createPersistentMap(): PersistentMap<T>;
+
 }
