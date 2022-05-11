@@ -1,15 +1,11 @@
 package il.ac.technion.cs.softwaredesign
 
 import library.PersistentMap
+import library.PersistentMapFactroy
 import java.sql.Time
 
-class BookManager{
-
-    private val persistentMap: PersistentMap<BookInfo>
-
-    init {
-        persistentMap = PersistentMapFactory.create()
-    }
+class BookManager(){
+    private val persistentMap: PersistentMap<BookInfo> =  PersistentMapFactroy.createPersistentMap()
 
 
     fun isIdExists(id: String): Boolean {
@@ -33,8 +29,3 @@ class BookManager{
     }
 }
 
-class BookInfo constructor(desc: String, cAmout: Int){
-    val description: String = desc
-    val copiesAmount: Int = cAmout
-    val timeOfLising = System.currentTimeMillis()
-}
