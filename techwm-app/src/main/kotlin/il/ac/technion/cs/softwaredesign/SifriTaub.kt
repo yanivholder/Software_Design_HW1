@@ -1,5 +1,6 @@
 package il.ac.technion.cs.softwaredesign
 
+
 /**
  * This is the main class implementing SifriTaub, the new book borrowing system.
  *
@@ -21,7 +22,12 @@ class SifriTaub {
      * system.
      * @return An authentication token to be used in future calls.
      */
-    fun authenticate(username: String, password: String): String = TODO("Implement me!")
+    fun authenticate(username: String, password: String): String {
+        if(!UserManager.isUsernameAndPassMatch(username = username, password = password)) {
+            throw IllegalArgumentException();
+        }
+        return UserManager.generateUserToken(username = username);
+    }
 
     /**
      * Register a user to the system, allowing him to start using it.
@@ -32,11 +38,20 @@ class SifriTaub {
      * @param password The password associated with the registered user.
      * @param isFromCS Whether the student is from CS faculty or external.
      * @param age The (positive) age of the student.
-     * @param password The password associated with the registered user.
      *
      * @throws IllegalArgumentException If a user with the same [username] already exists or the [age] is negative.
      */
-    fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit = TODO("Implement me!")
+    fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit {
+        if(UserManager.isUsernameExists(username = username) || age < 0) {
+            throw IllegalArgumentException();
+        }
+        UserManager.register(
+            username = username,
+            password = password,
+            isFromCS = isFromCS,
+            age = age
+        )
+    }
 
     /**
      * Retrieve information about a user.
@@ -51,7 +66,15 @@ class SifriTaub {
      * @return If the user exists, returns a [User] object containing information about the found user. Otherwise,
      * return `null`, indicating that there is no such user
      */
-    fun userInformation(token: String, username: String): User? = TODO("Implement me!")
+    fun userInformation(token: String, username: String): User? {
+        if(!UserManager.isValidToken(token = token)) {
+            throw PermissionException();
+        }
+        if(!UserManager.isUsernameExists(username = username)) {
+            return null;
+        }
+        return UserManager.getUserInformation(username = username);
+    }
 
     /**
      * Add a certain book to the library catalog, making it available for borrowing.
@@ -66,7 +89,15 @@ class SifriTaub {
      * @throws PermissionException If the [token] is invalid.
      * @throws IllegalArgumentException If a book with the same [id] already exists.
      */
-    fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): Unit = TODO("Implement me!")
+    fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): Unit {
+        if(!UserManager.isValidToken(token = token)) {
+            throw PermissionException();
+        }
+        if(BookManager.isIdExists(id = id)) {
+            throw IllegalArgumentException();
+        }
+        return BookManager.addBook(id = id, description = description, copiesAmount = copiesAmount);
+    }
 
     /**
      * Get the description for the book.
@@ -79,7 +110,15 @@ class SifriTaub {
      * @throws IllegalArgumentException If a book with the given [id] was not added to the library catalog by [addBookToCatalog].
      * @return A description string of the book with [id]
      */
-    fun getBookDescription(token: String, id: String): String = TODO("Implement me!")
+    fun getBookDescription(token: String, id: String): String {
+        if(!UserManager.isValidToken(token = token)) {
+            throw PermissionException();
+        }
+        if (!BookManager.isIdExists(id = id)) {
+            throw IllegalArgumentException();
+        }
+        return BookManager.getBookDescription(id = id);
+    }
 
     /**
      * List the ids of the first [n] unique books (no id should appear twice).
@@ -92,5 +131,10 @@ class SifriTaub {
      * @return A list of ids, of size [n], sorted by time of addition (determined by a call to [addBookToCatalog]).
      * If there are less than [n] ids of books, this method returns a list of all book ids (sorted as defined above).
      */
-    fun listBookIds(token: String, n: Int = 10): List<String> = TODO("Implement me!")
+    fun listBookIds(token: String, n: Int = 10): List<String> {
+        if(!UserManager.isValidToken(token = token)) {
+            throw PermissionException();
+        }
+        return BookManager.getFirstBooksByAddTime(numOfBooks = n);
+    }
 }
