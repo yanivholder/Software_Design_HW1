@@ -1,36 +1,40 @@
 package il.ac.technion.cs.softwaredesign
 
-class BookManager {
+import library.PersistentMap
+import java.sql.Time
 
-    val persistentMap: PersistentMap
+class BookManager{
+
+    private val persistentMap: PersistentMap<BookInfo>
 
     init {
         persistentMap = PersistentMapFactory.create()
     }
 
 
+    fun isIdExists(id: String): Boolean {
+        return persistentMap.exists(id)
+    }
 
-    companion object {
-        fun isIdExists(id: String): Boolean {
-            return false;
-        }
+    fun addBook(id: String, description: String, copiesAmount: Int): Unit {
+        val bookToStore: BookInfo = BookInfo(description, copiesAmount)
+        persistentMap.put(id, bookToStore)
+    }
 
-        fun addBook(id: String, description: String, copiesAmount: Int): Unit {
+    fun getBookDescription(id: String): String {
+        return persistentMap.get(id).description;
+    }
 
-        }
+    fun getFirstBooksByAddTime(numOfBooks: Int): List<String> {
 
-        fun getBookDescription(id: String): String {
-            return "";
-        }
-
-        fun getFirstBooksByAddTime(numOfBooks: Int): List<String> {
-            // remember to sort by time and limit by numOf...
-            return listOf();
-        }
+        val mapAsList = persistentMap.getAllMap().toList()
+        val firstBooksByAddTime = mapAsList.sortedBy { it.second.timeOfLising }.take(numOfBooks);
+        return firstBooksByAddTime.map { it.first /* The id's of the books only */ }
     }
 }
 
-class BookInfo co{
-    val description: String
-    val 
+class BookInfo constructor(desc: String, cAmout: Int){
+    val description: String = desc
+    val copiesAmount: Int = cAmout
+    val timeOfLising = System.currentTimeMillis()
 }
