@@ -8,6 +8,7 @@ import org.junit.jupiter.api.assertThrows
 
 class UserManagerTest {
 
+    // TODO - create mock for secureStorage and send it to UserManager
     private val injector = Guice.createInjector(SifriTaubModule())
     private val manager = injector.getInstance<UserManager>()
 

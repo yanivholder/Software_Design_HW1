@@ -9,7 +9,7 @@ package il.ac.technion.cs.softwaredesign
  */
 class SifriTaub {
 
-    // TODO - create UserManager, BookManager and pass the injected storage dependency to them
+    // TODO - inject a UserManager, BookManager implementations (they will inject storage dependency to themselves)
 
     /**
      * Authenticate a user identified by [username] and [password].

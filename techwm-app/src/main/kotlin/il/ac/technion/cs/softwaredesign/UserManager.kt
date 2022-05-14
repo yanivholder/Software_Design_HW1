@@ -7,6 +7,8 @@ import java.security.MessageDigest
 
 class UserManager() {
 
+    // Inject a storage dependency that implements [put, get, exists] to use below
+
     private val persistentMap: PersistentMap<UserInfo> = PersistentMapFactroy<UserInfo>::createPersistentMap()
     private val tokenManager: TokenManager = TokenManager() // TODO - maybe switch to getInstance()
     private val md = MessageDigest.getInstance("SHA-1")

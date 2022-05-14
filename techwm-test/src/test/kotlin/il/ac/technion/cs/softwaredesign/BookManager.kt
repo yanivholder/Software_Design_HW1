@@ -9,6 +9,8 @@ import org.junit.jupiter.api.assertThrows
 
 class BookManagerTest {
 
+    // TODO - create mock for secureStorage and send it to BookManager
+
     private val injector = Guice.createInjector(SifriTaubModule())
     private val manager = injector.getInstance<BookManager>()
 
