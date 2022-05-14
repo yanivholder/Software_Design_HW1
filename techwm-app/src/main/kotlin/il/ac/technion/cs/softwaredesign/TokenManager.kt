@@ -6,12 +6,12 @@ import library.PersistentMapFactroy
 class TokenManager {
 
 
-    private val persistentMap: PersistentMap<Boolean> = PersistentMapFactroy.createPersistentMap()
+    private val persistentMap: PersistentMap<Boolean> = PersistentMapFactroy<Boolean>.createPersistentMap()
 
     //TokenManager is shared between clients and must be a stateful singleton
-    fun getInstance(): TokenManager{
-        // TODO - make sure all request get the same instance
-    }
+//    fun getInstance(): TokenManager{
+//        // TODO - make sure all request get the same instance
+//    }
 
     // return true if and only if invalidation accrued successfully
     fun invalidate(oldToken: String): Boolean{
@@ -20,7 +20,7 @@ class TokenManager {
 
     // return true if and only if invalidation accrued successfully
     fun insert(newToken: String): Boolean{
-        return persistentMap.put(oldToken, true) == true
+        return persistentMap.put(newToken, true) == true
     }
 
     fun isValid(token: String): Boolean{

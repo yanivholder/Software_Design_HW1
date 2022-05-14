@@ -4,19 +4,23 @@ import library.PersistentMap
 import library.PersistentMapFactroy
 import java.security.MessageDigest
 
+
 class UserManager() {
 
-    private val persistentMap: PersistentMap<UserInfo> = PersistentMapFactroy.createPersistentMap()
-    private val tokenManager: TokenManager = TokenManager() // TODO - switch to getInstance()
-
-
+    private val persistentMap: PersistentMap<UserInfo> = PersistentMapFactroy<UserInfo>::createPersistentMap()
+    private val tokenManager: TokenManager = TokenManager() // TODO - maybe switch to getInstance()
     private val md = MessageDigest.getInstance("SHA-1")
+
 
     fun isUsernameExists(username: String): Boolean {
         return persistentMap.exists(username)
     }
     fun isUsernameAndPassMatch(username: String, password: String): Boolean {
         return persistentMap.get(username).password == password;
+    }
+
+    fun isValidToken(token: String): Boolean {
+        return tokenManager.isValid(token)
     }
 
     fun generateUserToken(username: String): String {
@@ -31,7 +35,6 @@ class UserManager() {
                 assert(false)
             }
         }
-        user.incNumTokensGenerated()
 
         val newTokenSeed = username + numberForTokenGeneation.toString()
         val newToken = md.digest(newTokenSeed.toByteArray()).toString()
@@ -39,11 +42,9 @@ class UserManager() {
             // debugging purposes only, getting here means something went wrong
             assert(false)
         }
-        return newToken
-    }
 
-    fun isValidToken(token: String): Boolean {
-        return tokenManager.isValid(token)
+        user.incNumTokensGenerated()
+        return newToken
     }
 
     fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit {
@@ -51,11 +52,13 @@ class UserManager() {
         persistentMap.put(username, newUser)
     }
 
+    /**
+     * @note This function assumes that the user does exist
+     * and it's behaviour is undefined if called for non-existing user
+     */
     fun getUserInformation(username: String): User {
+        assert(isUsernameExists(username))
         val usr = persistentMap.get(username)
-
         return User(username, usr.isFromCS, usr.age)
-
     }
-
 }

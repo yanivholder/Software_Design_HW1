@@ -1,6 +1,5 @@
 package il.ac.technion.cs.softwaredesign
 
-
 /**
  * This is the main class implementing SifriTaub, the new book borrowing system.
  *
@@ -9,6 +8,9 @@ package il.ac.technion.cs.softwaredesign
  * + Managing Books
  */
 class SifriTaub {
+
+    // TODO - create UserManager, BookManager and pass the injected storage dependency to them
+
     /**
      * Authenticate a user identified by [username] and [password].
      *

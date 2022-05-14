@@ -5,8 +5,7 @@ import library.PersistentMapFactroy
 import java.sql.Time
 
 class BookManager(){
-    private val persistentMap: PersistentMap<BookInfo> =  PersistentMapFactroy.createPersistentMap()
-
+    private val persistentMap: PersistentMap<BookInfo> = PersistentMapFactroy<BookInfo>.createPersistentMap()
 
     fun isIdExists(id: String): Boolean {
         return persistentMap.exists(id)
@@ -17,7 +16,12 @@ class BookManager(){
         persistentMap.put(id, bookToStore)
     }
 
+    /**
+     * @note This function assumes that the book with this id does exist
+     * and it's behaviour is undefined if called for non-existing book
+     */
     fun getBookDescription(id: String): String {
+        assert(isIdExists(id))
         return persistentMap.get(id).description;
     }
 
