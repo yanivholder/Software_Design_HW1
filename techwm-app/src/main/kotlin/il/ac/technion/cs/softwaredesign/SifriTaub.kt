@@ -9,12 +9,12 @@ import javax.inject.Inject
  * + Managing users
  * + Managing Books
  */
-class SifriTaub @Inject constructor(private val umf: UserManagerFactory, private val bmf: BookManagerFactory){
+class SifriTaub @Inject constructor(private val userManager: UserManager, private val bookManager: BookManager){
 
     // TODO - inject a UserManager, BookManager implementations (they will inject storage dependency to themselves)
 
-    private val userManager: UserManager = umf.create()
-    private val bookManager: BookManager = bmf.create()
+//    private val userManager: UserManager = userManagerImpl
+//    private val bookManager: BookManager = bookManagerImpl
 
     /**
      * Authenticate a user identified by [username] and [password].
@@ -33,7 +33,7 @@ class SifriTaub @Inject constructor(private val umf: UserManagerFactory, private
         if(!userManager.isUsernameAndPassMatch(username = username, password = password)) {
             throw IllegalArgumentException();
         }
-        return userManager.generateUserToken(username = username);
+        return userManager.generateUserTokenAndInvalidateOld(username = username);
     }
 
     /**

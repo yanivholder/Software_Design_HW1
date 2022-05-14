@@ -16,7 +16,7 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun get(key: String): T;
+    fun get(key: String): T?;
 
     /**
      *

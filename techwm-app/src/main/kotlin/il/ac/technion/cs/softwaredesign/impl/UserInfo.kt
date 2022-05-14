@@ -1,4 +1,4 @@
-package il.ac.technion.cs.softwaredesign
+package il.ac.technion.cs.softwaredesign.impl
 
 /**
  * A class holding a single user's information in the system.

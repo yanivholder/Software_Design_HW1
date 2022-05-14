@@ -1,18 +1,40 @@
 package il.ac.technion.cs.softwaredesign
 
+import com.google.common.collect.MutableClassToInstanceMap
 import com.google.inject.Guice
+import dev.misfitlabs.kotlinguice4.KotlinModule
 import dev.misfitlabs.kotlinguice4.getInstance
+import il.ac.technion.cs.softwaredesign.impl.BookInfo
+import il.ac.technion.cs.softwaredesign.impl.DefaultBookManager
+import library.PersistentMap
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import javax.inject.Inject
 
 
-class BookManagerTest {
 
-    // TODO - create mock for Storage layer and send it to BookManager so we can test BookManager only
 
-    private val injector = Guice.createInjector(SifriTaubModule())
-    private val manager = injector.getInstance<BookManager>()
+class PersistenMapBookMockModule : KotlinModule() {
+    override fun configure() {
+        bind<PersistentMap<BookInfo>>().to<PersistentMapMock<BookInfo>>()
+    }
+}
+
+
+class BookManagerTest {//@Inject constructor(private val manager: BookManager){
+
+    // TODO - create mock for PersistentMap and send it to BookManager so we can test BookManager only
+
+    // also, by the current gradle configuration, the mockK library is available only under techwm-test so I'm not sure about our current files structure and unit-tests location
+
+
+    private val injector = Guice.createInjector(PersistenMapBookMockModule())
+    private val manager = injector.getInstance<DefaultBookManager>()
+
+
+
+//    val manager = DefaultBookManager()
 
     @Test
     fun `is Id Exists`() {
