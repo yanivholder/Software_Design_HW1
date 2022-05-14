@@ -2,11 +2,12 @@ package il.ac.technion.cs.softwaredesign
 
 import library.PersistentMap
 import library.PersistentMapFactroy
+import javax.inject.Inject
 
-class TokenManager {
+class TokenManager @Inject constructor(private val pmf: PersistentMapFactroy<Boolean>){
 
 
-    private val persistentMap: PersistentMap<Boolean> = PersistentMapFactroy<Boolean>.createPersistentMap()
+    private val persistentMap: PersistentMap<Boolean> = pmf.createPersistentMap()
 
     //TokenManager is shared between clients and must be a stateful singleton
 //    fun getInstance(): TokenManager{

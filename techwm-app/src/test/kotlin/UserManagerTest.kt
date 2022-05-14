@@ -3,8 +3,6 @@ package il.ac.technion.cs.softwaredesign
 import com.google.inject.Guice
 import dev.misfitlabs.kotlinguice4.getInstance
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.assertThrows
 
 class UserManagerTest {
 

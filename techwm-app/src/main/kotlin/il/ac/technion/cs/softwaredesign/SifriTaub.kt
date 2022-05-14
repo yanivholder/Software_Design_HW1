@@ -1,5 +1,7 @@
 package il.ac.technion.cs.softwaredesign
 
+import javax.inject.Inject
+
 /**
  * This is the main class implementing SifriTaub, the new book borrowing system.
  *
@@ -7,11 +9,12 @@ package il.ac.technion.cs.softwaredesign
  * + Managing users
  * + Managing Books
  */
-class SifriTaub (){
+class SifriTaub @Inject constructor(private val umf: UserManagerFactory, private val bmf: BookManagerFactory){
 
     // TODO - inject a UserManager, BookManager implementations (they will inject storage dependency to themselves)
 
-
+    private val userManager: UserManager = umf.create()
+    private val bookManager: BookManager = bmf.create()
 
     /**
      * Authenticate a user identified by [username] and [password].
@@ -27,10 +30,10 @@ class SifriTaub (){
      * @return An authentication token to be used in future calls.
      */
     fun authenticate(username: String, password: String): String {
-        if(!UserManager.isUsernameAndPassMatch(username = username, password = password)) {
+        if(!userManager.isUsernameAndPassMatch(username = username, password = password)) {
             throw IllegalArgumentException();
         }
-        return UserManager.generateUserToken(username = username);
+        return userManager.generateUserToken(username = username);
     }
 
     /**
@@ -46,10 +49,10 @@ class SifriTaub (){
      * @throws IllegalArgumentException If a user with the same [username] already exists or the [age] is negative.
      */
     fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit {
-        if(UserManager.isUsernameExists(username = username) || age < 0) {
+        if(userManager.isUsernameExists(username = username) || age < 0) {
             throw IllegalArgumentException();
         }
-        UserManager.register(
+        userManager.register(
             username = username,
             password = password,
             isFromCS = isFromCS,
@@ -71,13 +74,13 @@ class SifriTaub (){
      * return `null`, indicating that there is no such user
      */
     fun userInformation(token: String, username: String): User? {
-        if(!UserManager.isValidToken(token = token)) {
+        if(!userManager.isValidToken(token = token)) {
             throw PermissionException();
         }
-        if(!UserManager.isUsernameExists(username = username)) {
+        if(!userManager.isUsernameExists(username = username)) {
             return null;
         }
-        return UserManager.getUserInformation(username = username);
+        return userManager.getUserInformation(username = username);
     }
 
     /**
@@ -94,13 +97,13 @@ class SifriTaub (){
      * @throws IllegalArgumentException If a book with the same [id] already exists.
      */
     fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): Unit {
-        if(!UserManager.isValidToken(token = token)) {
+        if(!userManager.isValidToken(token = token)) {
             throw PermissionException();
         }
-        if(BookManager.isIdExists(id = id)) {
+        if(bookManager.isIdExists(id = id)) {
             throw IllegalArgumentException();
         }
-        return BookManager.addBook(id = id, description = description, copiesAmount = copiesAmount);
+        return bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount);
     }
 
     /**
@@ -115,13 +118,13 @@ class SifriTaub (){
      * @return A description string of the book with [id]
      */
     fun getBookDescription(token: String, id: String): String {
-        if(!UserManager.isValidToken(token = token)) {
+        if(!userManager.isValidToken(token = token)) {
             throw PermissionException();
         }
-        if (!BookManager.isIdExists(id = id)) {
+        if (!bookManager.isIdExists(id = id)) {
             throw IllegalArgumentException();
         }
-        return BookManager.getBookDescription(id = id);
+        return bookManager.getBookDescription(id = id);
     }
 
     /**
@@ -136,9 +139,9 @@ class SifriTaub (){
      * If there are less than [n] ids of books, this method returns a list of all book ids (sorted as defined above).
      */
     fun listBookIds(token: String, n: Int = 10): List<String> {
-        if(!UserManager.isValidToken(token = token)) {
+        if(!userManager.isValidToken(token = token)) {
             throw PermissionException();
         }
-        return BookManager.getFirstBooksByAddTime(numOfBooks = n);
+        return bookManager.getFirstBooksByAddTime(numOfBooks = n);
     }
 }

@@ -3,13 +3,17 @@ package il.ac.technion.cs.softwaredesign
 import library.PersistentMap
 import library.PersistentMapFactroy
 import java.security.MessageDigest
+import javax.inject.Inject
 
 
-class UserManager() {
+class UserManager @Inject constructor(private val pmf: PersistentMapFactroy<UserInfo>) {
 
     // Inject a storage dependency that implements [put, get, exists] to use below
 
-    private val persistentMap: PersistentMap<UserInfo> = PersistentMapFactroy<UserInfo>::createPersistentMap()
+    private val persistentMap: PersistentMap<UserInfo> = pmf.createPersistentMap()
+
+
+
     private val tokenManager: TokenManager = TokenManager() // TODO - maybe switch to getInstance()
     private val md = MessageDigest.getInstance("SHA-1")
 

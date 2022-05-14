@@ -3,8 +3,10 @@ package il.ac.technion.cs.softwaredesign
 import library.PersistentMap
 import library.PersistentMapFactroy
 import java.sql.Time
+import javax.inject.Inject
 
-class BookManager(pmf: PersistentMapFactroy<BookInfo>){
+class BookManager @Inject constructor(private val pmf: PersistentMapFactroy<BookInfo>){
+
     // Inject a storage dependency that implements [put, get, exists, getAllMap] to use below
 
     private val persistentMap: PersistentMap<BookInfo> = pmf.createPersistentMap()
