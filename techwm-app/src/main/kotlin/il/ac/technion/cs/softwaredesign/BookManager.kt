@@ -4,10 +4,10 @@ import library.PersistentMap
 import library.PersistentMapFactroy
 import java.sql.Time
 
-class BookManager(){
+class BookManager(pmf: PersistentMapFactroy<BookInfo>){
     // Inject a storage dependency that implements [put, get, exists, getAllMap] to use below
 
-    private val persistentMap: PersistentMap<BookInfo> = PersistentMapFactroy<BookInfo>.createPersistentMap()
+    private val persistentMap: PersistentMap<BookInfo> = pmf.createPersistentMap()
 
     fun isIdExists(id: String): Boolean {
         return persistentMap.exists(id)
