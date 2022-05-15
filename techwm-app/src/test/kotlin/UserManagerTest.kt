@@ -8,6 +8,9 @@ import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
 import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
 import il.ac.technion.cs.softwaredesign.impl.UserInfo
 import library.PersistentMap
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 
@@ -23,9 +26,12 @@ class UserManagerTest {
 
     // TODO - create mock for secureStorage and send it to UserManager
     private val injector = Guice.createInjector(PersistenMapUserMockModule())
-    private val manager = injector.getInstance<DefaultUserManager>()
+    private var manager = injector.getInstance<DefaultUserManager>()
 
-
+    @BeforeEach
+    fun init(){
+        manager = injector.getInstance<DefaultUserManager>()
+    }
 
     @Test
     fun `is User name Exists`() {
@@ -38,7 +44,7 @@ class UserManagerTest {
     fun `is User name And Pass Match`() {
         manager.register("yaniv", "123", true, 18)
         assert(manager.isUsernameAndPassMatch("yaniv", "123"))
-        assert(manager.isUsernameAndPassMatch("yaniv", "456") == false)
+        assertFalse(manager.isUsernameAndPassMatch("yaniv", "456"))
     }
 
     @Test
@@ -48,15 +54,17 @@ class UserManagerTest {
         assert(manager.isValidToken(firstToken))
         val secondToken = manager.generateUserTokenAndInvalidateOld("omer")
         assert(manager.isValidToken(secondToken))
-        assert(manager.isValidToken(firstToken) == false)
+        assertFalse(manager.isValidToken(firstToken))
     }
 
     @Test
     fun `get User Information`() {
         manager.register("ofir", "jjj", false, 56)
+
         val ofir = manager.getUserInformation("ofir")
-        assert(ofir.isFromCS == false)
-        assert(ofir.age == 56)
-        assert(ofir.username == "ofir")
+
+        assertFalse(ofir.isFromCS)
+        assertEquals(ofir.age, 56)
+        assertEquals(ofir.username, "ofir")
     }
 }
