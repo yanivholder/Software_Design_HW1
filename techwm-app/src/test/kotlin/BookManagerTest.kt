@@ -1,6 +1,5 @@
 package il.ac.technion.cs.softwaredesign
 
-import com.google.common.collect.MutableClassToInstanceMap
 import com.google.inject.Guice
 import dev.misfitlabs.kotlinguice4.KotlinModule
 import dev.misfitlabs.kotlinguice4.getInstance
@@ -19,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach
 
 class PersistentMapBookMockModule : KotlinModule() {
     override fun configure() {
-        bind<PersistentMap<BookInfo>>().to<PersistentMapMock<BookInfo>>()
+        bind<PersistentMap<BookInfo>>().to<PersistentMapFake<BookInfo>>()
     }
 }
 
@@ -37,7 +36,6 @@ class BookManagerTest {//@Inject constructor(private val manager: BookManager){
     fun init(){
         manager = injector.getInstance<DefaultBookManager>()
     }
-
 
     @Test
     fun `is Id Exists`() {

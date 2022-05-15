@@ -4,7 +4,6 @@ import il.ac.technion.cs.softwaredesign.TokenManager
 import il.ac.technion.cs.softwaredesign.User
 import il.ac.technion.cs.softwaredesign.UserManager
 import library.PersistentMap
-import library.PersistentMapFactroy
 import java.security.MessageDigest
 import javax.inject.Inject
 

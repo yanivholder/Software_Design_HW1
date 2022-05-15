@@ -3,7 +3,6 @@ package il.ac.technion.cs.softwaredesign
 import com.google.inject.Guice
 import dev.misfitlabs.kotlinguice4.KotlinModule
 import dev.misfitlabs.kotlinguice4.getInstance
-import il.ac.technion.cs.softwaredesign.impl.BookInfo
 import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
 import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
 import il.ac.technion.cs.softwaredesign.impl.UserInfo
@@ -14,18 +13,19 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 
-class PersistenMapUserMockModule : KotlinModule() {
+class PersistentMapUserMockModule : KotlinModule() {
     override fun configure() {
-        bind<PersistentMap<UserInfo>>().to<PersistentMapMock<UserInfo>>()
+        bind<PersistentMap<UserInfo>>().to<PersistentMapFake<UserInfo>>()
         bind<TokenManager>().to<DefaultTokenManager>()
-        bind<PersistentMap<Boolean>>().to<PersistentMapMock<Boolean>>()
+        bind<PersistentMap<Boolean>>().to<PersistentMapFake<Boolean>>()
     }
 }
 
 class UserManagerTest {
 
     // TODO - create mock for secureStorage and send it to UserManager
-    private val injector = Guice.createInjector(PersistenMapUserMockModule())
+
+    private val injector = Guice.createInjector(PersistentMapUserMockModule())
     private var manager = injector.getInstance<DefaultUserManager>()
 
     @BeforeEach

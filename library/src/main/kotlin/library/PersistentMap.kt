@@ -8,7 +8,7 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun put(key: String, value: T): Boolean;
+    fun put(key: String, value: T?): Boolean;
 
     /**
      *
@@ -32,5 +32,5 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun getAllMap(): Map<String, T>;
+    fun getAllMap(): Map<String, T?>;
 }
