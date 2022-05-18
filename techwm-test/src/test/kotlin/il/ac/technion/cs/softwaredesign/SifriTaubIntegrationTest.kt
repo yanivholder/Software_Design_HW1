@@ -84,5 +84,4 @@ class SifriTaubIntegrationTest {
         assertEquals(User("omer", false, 27) , sifri.userInformation(token, "omer"))
     }
 
-
 }

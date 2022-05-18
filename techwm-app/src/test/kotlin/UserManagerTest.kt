@@ -15,9 +15,8 @@ import org.junit.jupiter.api.Test
 
 class PersistentMapUserMockModule : KotlinModule() {
     override fun configure() {
-        bind<PersistentMap<UserInfo>>().to<PersistentMapFake<UserInfo>>()
+        bind<PersistentMap>().to<PersistentMapFake>()
         bind<TokenManager>().to<DefaultTokenManager>()
-        bind<PersistentMap<Boolean>>().to<PersistentMapFake<Boolean>>()
     }
 }
 

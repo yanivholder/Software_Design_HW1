@@ -8,6 +8,6 @@ import library.impl.DefaultPersistentMap
 
 class BookManagerModule: KotlinModule() {
     override fun configure() {
-        bind<PersistentMap<BookInfo>>().to<DefaultPersistentMap<BookInfo>>()
+        bind<PersistentMap>().to<DefaultPersistentMap>()
     }
 }

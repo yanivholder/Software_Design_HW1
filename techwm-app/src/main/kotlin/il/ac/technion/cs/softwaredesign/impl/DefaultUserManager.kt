@@ -8,7 +8,7 @@ import java.security.MessageDigest
 import javax.inject.Inject
 
 
-class DefaultUserManager @Inject constructor(private val persistentMap: PersistentMap<UserInfo>, private val tokenManager: TokenManager) : UserManager {
+class DefaultUserManager @Inject constructor(private val persistentMap: PersistentMap, private val tokenManager: TokenManager) : UserManager {
 
     // Inject a storage dependency that implements [put, get, exists] to use below
 
@@ -21,7 +21,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         return persistentMap.exists(username)
     }
     override fun isUsernameAndPassMatch(username: String, password: String): Boolean {
-        return persistentMap.get(username)!!.password == password;
+        return UserInfo(persistentMap.get(username)!!).password == password;
     }
 
     override fun isValidToken(token: String): Boolean {
@@ -34,8 +34,8 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
     }
 
     override fun generateUserTokenAndInvalidateOld(username: String): String {
-        val user: UserInfo? = persistentMap.get(username)
-        val numberForTokenGeneation = user!!.getNumTokensGenerated()
+        val user: UserInfo = UserInfo(persistentMap.get(username)!!)
+        val numberForTokenGeneation = user.getNumTokensGenerated()
 
         if (numberForTokenGeneation != 0){
 
@@ -53,14 +53,14 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         }
 
         user.incNumTokensGenerated()
-        persistentMap.put(username, user)
+        persistentMap.put(username, user.serialize())
 
         return newToken
     }
 
     override fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit {
         val newUser = UserInfo(password, isFromCS, age)
-        persistentMap.put(username, newUser)
+        persistentMap.put(username, newUser.serialize())
     }
 
     /**
@@ -69,12 +69,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
      */
     override fun getUserInformation(username: String): User {
         assert(isUsernameExists(username))
-        val usr = persistentMap.get(username)
-        if (usr != null) {
-            return User(username, usr.isFromCS, usr.age)
-        }
-        // should never get here
-        assert(true)
-        return User("default", true, 1)
+        val usr = UserInfo(persistentMap.get(username)!!)
+        return User(username, usr.isFromCS, usr.age)
     }
 }

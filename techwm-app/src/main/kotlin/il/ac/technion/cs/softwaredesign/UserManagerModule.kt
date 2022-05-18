@@ -10,7 +10,7 @@ import library.impl.DefaultPersistentMap
 
 class UserManagerModule: KotlinModule() {
     override fun configure() {
-        bind<PersistentMap<UserInfo>>().to<DefaultPersistentMap<UserInfo>>()
+        bind<PersistentMap>().to<DefaultPersistentMap>()
         bind<TokenManager>().to<DefaultTokenManager>()
     }
 }
