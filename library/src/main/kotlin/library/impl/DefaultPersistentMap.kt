@@ -1,8 +1,6 @@
 package library.impl
 
 import javax.inject.Inject
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.encodeToString
 
 import library.PersistentMap
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
@@ -13,40 +11,32 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import kotlin.system.exitProcess
 
-//@Serializable
-//data class DataWrapper <T> (val data: T)
-
-class ObjectSerializer {
-    companion object {
-        fun serialize(obj: Any?): ByteArray {
-            if (obj == null) {
-                return ByteArray(0)
-            }
-            val baos = ByteArrayOutputStream()
-            val oos = ObjectOutputStream(baos)
-            oos.writeObject(obj)
-            oos.close()
-            return baos.toByteArray()
-        }
-
-        fun deserialize(bytes: ByteArray) : Any? {
-            if(bytes.contentEquals(ByteArray(0))) {
-                return null
-            }
-            val bais = ByteArrayInputStream(bytes)
-            val ois = ObjectInputStream(bais)
-            return ois.readObject()
-        }
-    }
-}
-
-class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap<T> {
+class DefaultPersistentMap @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap {
 
     private val secureStorageMaxSize = 100
     private val masterKeyName = "keys-a"
 
     init {
         this.initMasterKey()
+    }
+
+    private fun serialize(value: Any): ByteArray {
+        val baos = ByteArrayOutputStream()
+        val oos = ObjectOutputStream(baos)
+        oos.writeObject(value)
+        return baos.toByteArray()
+    }
+
+    private fun deserializeStringList(byteArray: ByteArray): MutableList<String> {
+        val bais = ByteArrayInputStream(byteArray)
+        val ois = ObjectInputStream(bais)
+        return ois.readObject() as MutableList<String>
+    }
+
+    private fun deserializeString(byteArray: ByteArray): String {
+        val bais = ByteArrayInputStream(byteArray)
+        val ois = ObjectInputStream(bais)
+        return ois.readObject() as String
     }
 
     private fun increaseLex(str: String): String {
@@ -73,23 +63,19 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
     }
 
     private fun initMasterKey() {
-        // TODO fix
-        putMainLogic(masterKeyName, ObjectSerializer.serialize(mutableListOf<String>()), true)
-//        putMainLogic(masterKeyName, Json.encodeToString(mutableListOf<String>()).toByteArray(), true)
+        putMainLogic(masterKeyName, serialize(mutableListOf<String>()), true)
     }
 
     private fun addToMasterKey(key: String) {
-        val currentMasterKeyListEncoded = getMainLogic(masterKeyName, isMasterKey = true)
-        // TODO fix
-        val currentMasterKeyList: MutableList<String> = ObjectSerializer.deserialize(currentMasterKeyListEncoded) as MutableList<String>
-//        val currentMasterKeyList = Json.decodeFromString<MutableList<String>>(currentMasterKeyListEncoded.toString())
+        val currentMasterKeyListSerialized = getMainLogic(masterKeyName, isMasterKey = true)
+        val currentMasterKeyList = deserializeStringList(currentMasterKeyListEncoded) as MutableList<String>
         currentMasterKeyList.add(key)
         // TODO fix
         putMainLogic(masterKeyName, ObjectSerializer.serialize(currentMasterKeyList), true)
 //        putMainLogic(masterKeyName, Json.encodeToString(currentMasterKeyList).toByteArray(), true)
     }
 
-    private fun putMainLogic(key: String, encodedWrapValue: ByteArray, isMasterKey: Boolean) {
+    private fun putMainLogic(key: String, value: Any, isMasterKey: Boolean) {
         var currentKey = key
         val encodedWrapValueSize = encodedWrapValue.size
         var currentIteration = 0

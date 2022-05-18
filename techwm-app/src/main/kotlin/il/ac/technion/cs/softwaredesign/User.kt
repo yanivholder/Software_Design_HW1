@@ -1,5 +1,8 @@
 package il.ac.technion.cs.softwaredesign
 
+import java.io.ByteArrayInputStream
+import java.io.ObjectInputStream
+
 
 /**
  * A class holding a single user's information in the system.
@@ -8,4 +11,6 @@ package il.ac.technion.cs.softwaredesign
  * @property isFromCS Whether the student is from CS faculty or external.
  * @property age The age of the student.
  */
-data class User(val username: String, val isFromCS: Boolean, val age: Int)
+data class User(var username: String = "", var isFromCS: Boolean = true, var age: Int = 0) : ByteSerializable {
+
+}

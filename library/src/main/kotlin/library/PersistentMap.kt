@@ -1,6 +1,6 @@
 package library
 
-interface PersistentMap <T> {
+interface PersistentMap {
 
     /**
      *
@@ -8,7 +8,7 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun put(key: String, value: T?): Boolean;
+    fun put(key: String, value: ByteArray)
 
     /**
      *
@@ -16,7 +16,7 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun get(key: String): T?;
+    fun get(key: String): ByteArray?
 
     /**
      *
@@ -24,7 +24,7 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun exists(key: String): Boolean;
+    fun exists(key: String): Boolean
 
     /**
      *
@@ -32,5 +32,5 @@ interface PersistentMap <T> {
      *
      * @throws ?
      */
-    fun getAllMap(): Map<String, T?>;
+    fun getAllMap(): Map<String, ByteArray>
 }

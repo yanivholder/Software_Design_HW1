@@ -5,13 +5,15 @@ import library.impl.ObjectSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.io.Serializable
 
-class valueClass(val v1: String, val v2: Boolean = true, val v3: Int = 3)
+@kotlinx.serialization.Serializable
+class ValueClass(val v1: String, val v2: Boolean = true, val v3: Int = 3) : Serializable
 
 class PersistentMapTest {
 
     private var secureStorageFake = SecureStorageFake()
-    private var persistentMap = DefaultPersistentMap<valueClass>(secureStorageFake)
+    private var persistentMap = DefaultPersistentMap<ValueClass>(secureStorageFake)
 
     @BeforeEach
     fun init() {
@@ -34,7 +36,7 @@ class PersistentMapTest {
     fun `get on a existing key returns it`() {
         // Arrange
         val key = "someKey"
-        val value = valueClass("someValue")
+        val value = ValueClass("someValue")
 
         // Act
         persistentMap.put(key, value)
@@ -64,7 +66,7 @@ class PersistentMapTest {
     fun `write a non-existing key works (at start get(key) return null then it will return the value`() {
         // Arrange
         val key = "someKey"
-        val value = valueClass("someValue")
+        val value = ValueClass("someValue")
 
         // Act
         val resBeforePut = persistentMap.get(key)
@@ -80,8 +82,8 @@ class PersistentMapTest {
     fun `write an existing key and overwrite it`() {
         // Arrange
         val key = "someKey"
-        val value1 = valueClass("first someValue")
-        val value2 = valueClass("second someValue")
+        val value1 = ValueClass("first someValue")
+        val value2 = ValueClass("second someValue")
 
         // Act
         persistentMap.put(key, value1)
@@ -98,7 +100,7 @@ class PersistentMapTest {
     fun `exists on an existing key`() {
         // Arrange
         val key = "someKey"
-        val value = valueClass("someValue")
+        val value = ValueClass("someValue")
 
         // Act
         persistentMap.put(key, value)
@@ -122,7 +124,7 @@ class PersistentMapTest {
 
     @Test
     fun `get-All`() {
-        val map = (1..1000).associate { it.toString() to valueClass("", v3 = it) }.toMap()
+        val map = (1..1000).associate { it.toString() to ValueClass("", v3 = it) }.toMap()
 
         // Act
         map.forEach { entry -> persistentMap.put(entry.key, entry.value) }
@@ -142,10 +144,19 @@ class PersistentMapTest {
 
     @Test
     fun `temp`() {
-        val map = mutableMapOf<ByteArray, ByteArray>()
+        assertEquals(ValueClass("").v2, ((ObjectSerializer.deserialize(ObjectSerializer.serialize(ValueClass("")))) as ValueClass).v2)
+//        assertEquals(ObjectSerializer.serialize(ValueClass("")), ObjectSerializer.serialize(ValueClass("")))
+//        assertEquals("".toByteArray(), "".toByteArray())
 
-        map[ObjectSerializer.serialize("key")] = ObjectSerializer.serialize("value")
 
-        assertEquals(map[ObjectSerializer.serialize("key")], ObjectSerializer.serialize("value"))
+//        val map = mutableMapOf<ByteArray, ByteArray>()
+//
+//        val t10 = ObjectSerializer.serialize("key")
+//        map[t10] = ObjectSerializer.serialize("value")
+//        val t11 = ObjectSerializer.serialize("key")
+//        val t2 = map.get(ObjectSerializer.serialize("key"))
+//
+//        assertEquals(t10, t11)
+//        assertEquals(map.get(ObjectSerializer.serialize("key")), ObjectSerializer.serialize("value"))
     }
 }
