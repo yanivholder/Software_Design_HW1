@@ -1,30 +1,17 @@
 package library
 
-import com.google.inject.Guice
-import dev.misfitlabs.kotlinguice4.KotlinModule
-import dev.misfitlabs.kotlinguice4.getInstance
-import il.ac.technion.cs.softwaredesign.storage.SecureStorage
-import io.mockk.every
-import io.mockk.mockk
 import library.impl.DefaultPersistentMap
+import library.impl.ObjectSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-//class PersistentMapTestModule : KotlinModule() {
-//    override fun configure() {
-//        bind<SecureStorage>().to<SecureStorageFake>()
-//    }
-//}
-
-class MapValue(val v1: String, val v2: Boolean, val v3: Int)
+class valueClass(val v1: String, val v2: Boolean = true, val v3: Int = 3)
 
 class PersistentMapTest {
 
-//    private val injector = Guice.createInjector(PersistentMapTestModule())
-//    private val persistentMap = injector.getInstance<DefaultPersistentMap<MapValue>>()
     private var secureStorageFake = SecureStorageFake()
-    private var persistentMap = DefaultPersistentMap<String>(secureStorageFake)
+    private var persistentMap = DefaultPersistentMap<valueClass>(secureStorageFake)
 
     @BeforeEach
     fun init() {
@@ -37,7 +24,7 @@ class PersistentMapTest {
         // Arrange
 
         // Act
-        val res = persistentMap.get("")
+        val res = persistentMap.get("someKey")
 
         // Assert
         assertEquals(res, null)
@@ -46,91 +33,119 @@ class PersistentMapTest {
     @Test
     fun `get on a existing key returns it`() {
         // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val key = "someKey"
+        val value = valueClass("someValue")
 
         // Act
-//        var res = persistentMap.get("");
+        persistentMap.put(key, value)
+        val res = persistentMap.get(key)
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(res, value)
     }
 
     @Test
     fun `get after big put return the full value`() {
         // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val listPersistentMap = DefaultPersistentMap<List<Int>>(secureStorageFake)
+
+        val key = "someKey"
+        val value = (1..10000).toList()
 
         // Act
-//        var res = persistentMap.get("");
+        listPersistentMap.put(key, value)
+        val res = listPersistentMap.get(key)
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(res, value)
     }
 
     @Test
-    fun `write an empty key works (before get return null after return the value`() {
+    fun `write a non-existing key works (at start get(key) return null then it will return the value`() {
         // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val key = "someKey"
+        val value = valueClass("someValue")
 
         // Act
-//        var res = persistentMap.get("");
+        val resBeforePut = persistentMap.get(key)
+        persistentMap.put(key, value)
+        val resAfterPut = persistentMap.get(key)
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(resBeforePut, null)
+        assertEquals(resAfterPut, value)
     }
 
     @Test
-    fun `write an existing key overwrites it`() {
+    fun `write an existing key and overwrite it`() {
         // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val key = "someKey"
+        val value1 = valueClass("first someValue")
+        val value2 = valueClass("second someValue")
 
         // Act
-//        var res = persistentMap.get("");
+        persistentMap.put(key, value1)
+        val resBeforePut = persistentMap.get(key)
+        persistentMap.put(key, value2)
+        val resAfterPut = persistentMap.get(key)
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(resBeforePut, value1)
+        assertEquals(resAfterPut, value2)
     }
 
     @Test
     fun `exists on an existing key`() {
         // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val key = "someKey"
+        val value = valueClass("someValue")
 
         // Act
-//        var res = persistentMap.get("");
+        persistentMap.put(key, value)
+        val res = persistentMap.exists(key)
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(res, true)
     }
 
     @Test
     fun `exists on a non-existing key`() {
         // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val key = "someKey"
 
         // Act
-//        var res = persistentMap.get("");
+        val res = persistentMap.exists(key)
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(res, false)
     }
 
     @Test
     fun `get-All`() {
-        // Arrange
-//        val secureStorageMock = mockk<SecureStorage>();
-//        val persistentMap = DefaultPersistentMap<String>(secureStorageMock);
+        val map = (1..1000).associate { it.toString() to valueClass("", v3 = it) }.toMap()
 
         // Act
-//        var res = persistentMap.get("");
+        map.forEach { entry -> persistentMap.put(entry.key, entry.value) }
+        val res = persistentMap.getAllMap()
 
         // Assert
-//        assertEquals(res, );
+        assertEquals(res, map)
+    }
+
+    @Test
+    fun `serializer works`() {
+        val listA = listOf(1, 2, 3, 4, 5)
+        val ser = ObjectSerializer.serialize(listA)
+        val listB = ObjectSerializer.deserialize(ser)
+        assertEquals(listA, listB)
+    }
+
+    @Test
+    fun `temp`() {
+        val map = mutableMapOf<ByteArray, ByteArray>()
+
+        map[ObjectSerializer.serialize("key")] = ObjectSerializer.serialize("value")
+
+        assertEquals(map[ObjectSerializer.serialize("key")], ObjectSerializer.serialize("value"))
     }
 }

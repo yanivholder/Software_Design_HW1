@@ -1,16 +1,44 @@
 package library.impl
 
 import javax.inject.Inject
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 
 import library.PersistentMap
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
 import kotlinx.serialization.decodeFromString
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import kotlin.system.exitProcess
 
-@Serializable
-data class DataWrapper <T> (val data: T)
+//@Serializable
+//data class DataWrapper <T> (val data: T)
+
+class ObjectSerializer {
+    companion object {
+        fun serialize(obj: Any?): ByteArray {
+            if (obj == null) {
+                return ByteArray(0)
+            }
+            val baos = ByteArrayOutputStream()
+            val oos = ObjectOutputStream(baos)
+            oos.writeObject(obj)
+            oos.close()
+            return baos.toByteArray()
+        }
+
+        fun deserialize(bytes: ByteArray) : Any? {
+            if(bytes.contentEquals(ByteArray(0))) {
+                return null
+            }
+            val bais = ByteArrayInputStream(bytes)
+            val ois = ObjectInputStream(bais)
+            return ois.readObject()
+        }
+    }
+}
 
 class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap<T> {
 
@@ -18,12 +46,12 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
     private val masterKeyName = "keys-a"
 
     init {
-        this.addToMasterKey(null)
+        this.initMasterKey()
     }
 
     private fun increaseLex(str: String): String {
 
-        // if string is empty
+        // if string is empty - not happening in our case
         if(str == "") {
             return "a"
         }
@@ -44,15 +72,21 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
         }
     }
 
-    private fun addToMasterKey(key: String?) {
-        if(key == null) {
-            putMainLogic(masterKeyName, Json.encodeToString(mutableListOf<String>()).toByteArray(), true)
-        } else {
-            val currentMasterKeyListEncoded = getMainLogic(masterKeyName, isMasterKey = true)
-            val currentMasterKeyList = Json.decodeFromString<MutableList<String>>(currentMasterKeyListEncoded.toString())
-            currentMasterKeyList.add(key)
-            putMainLogic(masterKeyName, Json.encodeToString(currentMasterKeyList).toByteArray(), true)
-        }
+    private fun initMasterKey() {
+        // TODO fix
+        putMainLogic(masterKeyName, ObjectSerializer.serialize(mutableListOf<String>()), true)
+//        putMainLogic(masterKeyName, Json.encodeToString(mutableListOf<String>()).toByteArray(), true)
+    }
+
+    private fun addToMasterKey(key: String) {
+        val currentMasterKeyListEncoded = getMainLogic(masterKeyName, isMasterKey = true)
+        // TODO fix
+        val currentMasterKeyList: MutableList<String> = ObjectSerializer.deserialize(currentMasterKeyListEncoded) as MutableList<String>
+//        val currentMasterKeyList = Json.decodeFromString<MutableList<String>>(currentMasterKeyListEncoded.toString())
+        currentMasterKeyList.add(key)
+        // TODO fix
+        putMainLogic(masterKeyName, ObjectSerializer.serialize(currentMasterKeyList), true)
+//        putMainLogic(masterKeyName, Json.encodeToString(currentMasterKeyList).toByteArray(), true)
     }
 
     private fun putMainLogic(key: String, encodedWrapValue: ByteArray, isMasterKey: Boolean) {
@@ -91,15 +125,17 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
     }
 
     override fun put(key: String, value: T?): Boolean {
-        val wrapValue = DataWrapper(value)
-        val encodedWrapValue = Json.encodeToString(wrapValue).toByteArray()
-        putMainLogic(key, encodedWrapValue, isMasterKey = false)
+//        val wrapValue = DataWrapper(value)
+        // TODO remove comment
+        val serializedValue = ObjectSerializer.serialize(value)
+//        val encodedWrapValue = Json.encodeToString(wrapValue).toByteArray()
+        putMainLogic(key, serializedValue, isMasterKey = false)
         addToMasterKey(key)
         // TODO erase that
         return true
     }
 
-    private fun getMainLogic(key: String, isMasterKey: Boolean): ByteArray? {
+    private fun getMainLogic(key: String, isMasterKey: Boolean): ByteArray {
         val listOfParts = mutableListOf<ByteArray>()
         var currentIteration = 0
 
@@ -125,18 +161,19 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
             currentPart = secureStorage.read(currentKey)
         }
         if(currentIteration == 0) {
-            return null
+            // TODO bug
+            exitProcess(1)
         }
 
-        val encodedWrapValue = ByteArray(listOfParts.size * (secureStorageMaxSize - 1))
+        val serializedValue = ByteArray(listOfParts.size * (secureStorageMaxSize - 1))
         for(i in listOfParts.indices) {
             System.arraycopy(
                 listOfParts[i], 0,
-                encodedWrapValue, i * secureStorageMaxSize,
+                serializedValue, i * secureStorageMaxSize,
                 secureStorageMaxSize - 1
             )
         }
-        return encodedWrapValue
+        return serializedValue
     }
 
     override fun get(key: String): T? {
@@ -144,7 +181,9 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
             return null
         }
         val value = getMainLogic(key, false)
-        return Json.decodeFromString<DataWrapper<T>>(value.toString()).data
+        // TODO erase comment
+        return ObjectSerializer.deserialize(value) as T?
+//        return Json.decodeFromString<DataWrapper<T>>(value.toString()).data
     }
 
     override fun exists(key: String): Boolean {
@@ -152,6 +191,8 @@ class DefaultPersistentMap<T> @Inject constructor(private val secureStorage: Sec
     }
 
     override fun getAllMap(): Map<String, T?> {
-        TODO("Not yet implemented")
+        val keyListByteArray = getMainLogic(masterKeyName, true)
+        val keyList: MutableList<String> = Json.decodeFromString(keyListByteArray.toString())
+        return keyList.associateWith { get(it) }
     }
 }
