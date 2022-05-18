@@ -9,7 +9,6 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import kotlin.system.exitProcess
 
 class DefaultPersistentMap @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap {
 
@@ -68,27 +67,25 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
 
     private fun addToMasterKey(key: String) {
         val currentMasterKeyListSerialized = getMainLogic(masterKeyName, isMasterKey = true)
-        val currentMasterKeyList = deserializeStringList(currentMasterKeyListEncoded) as MutableList<String>
+        val currentMasterKeyList = deserializeStringList(currentMasterKeyListSerialized)
         currentMasterKeyList.add(key)
-        // TODO fix
-        putMainLogic(masterKeyName, ObjectSerializer.serialize(currentMasterKeyList), true)
-//        putMainLogic(masterKeyName, Json.encodeToString(currentMasterKeyList).toByteArray(), true)
+        putMainLogic(masterKeyName, serialize(currentMasterKeyList), true)
     }
 
-    private fun putMainLogic(key: String, value: Any, isMasterKey: Boolean) {
+    private fun putMainLogic(key: String, serializedValue: ByteArray, isMasterKey: Boolean) {
         var currentKey = key
-        val encodedWrapValueSize = encodedWrapValue.size
+        val serializedValueSize = serializedValue.size
         var currentIteration = 0
 
-        while(currentIteration * (secureStorageMaxSize - 1) < encodedWrapValueSize) {
+        while(currentIteration * (secureStorageMaxSize - 1) < serializedValueSize) {
             val relevantPart = ByteArray(secureStorageMaxSize)
             System.arraycopy(
-                encodedWrapValue, currentIteration * secureStorageMaxSize,
+                serializedValue, currentIteration * secureStorageMaxSize,
                 relevantPart, 0,
-                if(encodedWrapValueSize >= secureStorageMaxSize) secureStorageMaxSize - 1 else encodedWrapValueSize
+                if(serializedValueSize >= secureStorageMaxSize) (secureStorageMaxSize - 1) else serializedValueSize
             )
 
-            if((currentIteration + 1) * (secureStorageMaxSize - 1) < encodedWrapValueSize) {
+            if((currentIteration + 1) * (secureStorageMaxSize - 1) < serializedValueSize) {
                 relevantPart[relevantPart.size - 1] = 1 // Symbols that this is not the last part
             } else {
                 relevantPart[relevantPart.size - 1] = 0 // Symbols that this is the last part
@@ -96,13 +93,13 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
 
             if(isMasterKey){
                 secureStorage.write(
-                    key = (currentKey).toByteArray(),
+                    key = serialize(currentKey),
                     value = relevantPart
                 )
                 currentKey = increaseLex(currentKey)
             } else {
                 secureStorage.write(
-                    key = (key + currentIteration.toString()).toByteArray(),
+                    key = serialize(key + currentIteration.toString()),
                     value = relevantPart
                 )
             }
@@ -110,14 +107,9 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
         }
     }
 
-    override fun put(key: String, value: T?): Boolean {
-//        val wrapValue = DataWrapper(value)
-        // TODO remove comment
-        val serializedValue = ObjectSerializer.serialize(value)
-//        val encodedWrapValue = Json.encodeToString(wrapValue).toByteArray()
+    override fun put(key: String, serializedValue: ByteArray): Boolean {
         putMainLogic(key, serializedValue, isMasterKey = false)
         addToMasterKey(key)
-        // TODO erase that
         return true
     }
 
@@ -127,9 +119,9 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
 
         var currentKey: ByteArray
         if(isMasterKey) {
-            currentKey = key.toByteArray()
+            currentKey = serialize(key)
         } else {
-            currentKey = (key + currentIteration.toString()).toByteArray()
+            currentKey = serialize(key + currentIteration.toString())
         }
 
         var currentPart = secureStorage.read(currentKey)
@@ -139,16 +131,15 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
             currentIteration++
 
             if(isMasterKey) {
-                currentKey = increaseLex(currentKey.toString()).toByteArray()
+                currentKey = serialize(increaseLex(deserializeString(currentKey)))
             } else {
-                currentKey = (key + currentIteration.toString()).toByteArray()
+                currentKey = serialize(key + currentIteration.toString())
             }
 
             currentPart = secureStorage.read(currentKey)
         }
         if(currentIteration == 0) {
             // TODO bug
-            exitProcess(1)
         }
 
         val serializedValue = ByteArray(listOfParts.size * (secureStorageMaxSize - 1))
@@ -162,23 +153,20 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
         return serializedValue
     }
 
-    override fun get(key: String): T? {
-        if(!exists(key)) {
+    override fun get(key: String): ByteArray? {
+        if (!exists(key)) {
             return null
         }
-        val value = getMainLogic(key, false)
-        // TODO erase comment
-        return ObjectSerializer.deserialize(value) as T?
-//        return Json.decodeFromString<DataWrapper<T>>(value.toString()).data
+        return getMainLogic(key, false)
     }
 
     override fun exists(key: String): Boolean {
-        return secureStorage.read((key + "0").toByteArray()) != null
+        return secureStorage.read(serialize(key + "0")) != null
     }
 
-    override fun getAllMap(): Map<String, T?> {
+    override fun getAllMap(): Map<String, ByteArray?> {
         val keyListByteArray = getMainLogic(masterKeyName, true)
-        val keyList: MutableList<String> = Json.decodeFromString(keyListByteArray.toString())
+        val keyList = deserializeStringList(keyListByteArray)
         return keyList.associateWith { get(it) }
     }
 }

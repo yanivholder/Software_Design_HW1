@@ -1,14 +1,13 @@
 package library
 
 import library.impl.DefaultPersistentMap
-import library.impl.ObjectSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.Serializable
 
-@kotlinx.serialization.Serializable
-class ValueClass(val v1: String, val v2: Boolean = true, val v3: Int = 3) : Serializable
+class ValueClass(val v1: String, val v2: Boolean = true, val v3: Int = 3) {
+    
+}
 
 class PersistentMapTest {
 
