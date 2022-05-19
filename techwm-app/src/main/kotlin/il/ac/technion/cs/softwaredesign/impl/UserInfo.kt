@@ -25,6 +25,7 @@ data class UserInfo(var password: String = "", var isFromCS: Boolean = true, var
         this.password = obj.password
         this.isFromCS = obj.isFromCS
         this.age = obj.age
+        this.tokenGenerated = obj.tokenGenerated
     }
 
     fun getNumTokensGenerated(): Int{

@@ -8,6 +8,6 @@ import library.impl.DefaultPersistentMap
 
 class TokenManagerModule: KotlinModule() {
     override fun configure() {
-        bind<PersistentMap<Boolean>>().to<DefaultPersistentMap<Boolean>>()
+        bind<PersistentMap>().to<DefaultPersistentMap>()
     }
 }
