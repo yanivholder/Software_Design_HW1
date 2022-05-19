@@ -27,8 +27,6 @@ class BookManagerTest {//@Inject constructor(private val manager: BookManager){
 
     // TODO - create mock for PersistentMap and send it to BookManager so we can test BookManager only
 
-    // also, by the current gradle configuration, the mockK library is available only under techwm-test so I'm not sure about our current files structure and unit-tests location
-
     private val injector = Guice.createInjector(PersistentMapBookMockModule())
     private var manager = injector.getInstance<DefaultBookManager>()
 

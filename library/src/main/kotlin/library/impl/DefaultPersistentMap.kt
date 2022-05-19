@@ -147,11 +147,11 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
             // TODO bug
         }
 
-        val serializedValue = ByteArray(listOfParts.size - 1 * (secureStorageMaxSize - metedataSize) + listOfParts.last()[98])
+        val serializedValue = ByteArray(((listOfParts.size - 1) * (secureStorageMaxSize - metedataSize)) + listOfParts.last()[98])
         for(i in listOfParts.indices) {
             System.arraycopy(
                 listOfParts[i], 0,
-                serializedValue, i * secureStorageMaxSize,
+                serializedValue, (i * (secureStorageMaxSize - metedataSize)),
                 listOfParts[i][secureStorageMaxSize - 2].toInt()
             )
         }
