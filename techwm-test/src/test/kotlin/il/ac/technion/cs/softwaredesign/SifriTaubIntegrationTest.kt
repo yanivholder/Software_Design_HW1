@@ -16,7 +16,7 @@ class SifriTaubIntegrationTest {
 
     @BeforeEach
     fun init(){
-        sifri = injector.getInstance<SifriTaub>()
+        sifri = injector.getInstance()
     }
 
     @Test

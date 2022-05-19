@@ -4,7 +4,6 @@ import javax.inject.Inject
 
 import library.PersistentMap
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
-import kotlinx.serialization.decodeFromString
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream

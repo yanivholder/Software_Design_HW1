@@ -18,17 +18,14 @@ import org.junit.jupiter.api.assertThrows
 
 class SifriTaubTest {
 
-//    private val injector = Guice.createInjector(SifriTaubModule())
-//    private val sifri = injector.getInstance<SifriTaub>()
-
-    private var userManagerMock: UserManager = mockk<UserManager>(relaxed = true)
-    private var bookManagerMock: BookManager = mockk<BookManager>(relaxed = true)
+    private var userManagerMock: UserManager = mockk(relaxed = true)
+    private var bookManagerMock: BookManager = mockk(relaxed = true)
     private var sifriTaub = SifriTaub(userManagerMock, bookManagerMock)
 
     @BeforeEach
     fun init(){
-        userManagerMock = mockk<UserManager>(relaxed = true)
-        bookManagerMock = mockk<BookManager>(relaxed = true)
+        userManagerMock = mockk(relaxed = true)
+        bookManagerMock = mockk(relaxed = true)
         sifriTaub = SifriTaub(userManagerMock, bookManagerMock)
     }
 

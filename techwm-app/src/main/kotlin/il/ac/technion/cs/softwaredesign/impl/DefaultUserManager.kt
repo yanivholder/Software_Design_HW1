@@ -21,7 +21,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         return persistentMap.exists(username)
     }
     override fun isUsernameAndPassMatch(username: String, password: String): Boolean {
-        return UserInfo(persistentMap.get(username)!!).password == password;
+        return UserInfo(persistentMap.get(username)!!).password == password
     }
 
     override fun isValidToken(token: String): Boolean {

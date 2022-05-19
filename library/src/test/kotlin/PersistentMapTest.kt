@@ -48,16 +48,12 @@ class ValueClass(var v1: String = "", var v2: Boolean = true, var v3: List<Int> 
 
 class PersistentMapTest {
 
-//    private var secureStorageFake = SecureStorageFake()
-//    private var persistentMap = DefaultPersistentMap(secureStorageFake)
     private val injector = Guice.createInjector(PersistentMapTestModule())
     private var persistentMap = injector.getInstance<DefaultPersistentMap>()
 
     @BeforeEach
     fun init() {
-//        secureStorageFake = SecureStorageFake()
-//        persistentMap = DefaultPersistentMap(secureStorageFake)
-        persistentMap = injector.getInstance<DefaultPersistentMap>()
+        persistentMap = injector.getInstance()
     }
 
     @Test
