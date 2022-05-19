@@ -16,12 +16,17 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
 //    private val tokenManager: TokenManager = tokenManager
     private val md = MessageDigest.getInstance("SHA-1")
 
-
     override fun isUsernameExists(username: String): Boolean {
         return persistentMap.exists(username)
     }
+
     override fun isUsernameAndPassMatch(username: String, password: String): Boolean {
-        return UserInfo(persistentMap.get(username)!!).password == password
+        val usr = persistentMap.get(username)
+        if (usr == null){
+            return false
+        }else{
+            return (UserInfo(usr).password == password)
+        }
     }
 
     override fun isValidToken(token: String): Boolean {

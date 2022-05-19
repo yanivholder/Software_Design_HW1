@@ -4,6 +4,9 @@ import dev.misfitlabs.kotlinguice4.KotlinModule
 import il.ac.technion.cs.softwaredesign.impl.DefaultBookManager
 import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
 import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
+import library.*
+import il.ac.technion.cs.softwaredesign.storage.SecureStorageFactory
+import il.ac.technion.cs.softwaredesign.storage.SecureStorageModule
 import library.PersistentMap
 import library.impl.DefaultPersistentMap
 
@@ -33,8 +36,12 @@ class SifriTaubModule: KotlinModule() {
 //        bind<BookManager>().to<BookMock>()
         bind<UserManager>().to<DefaultUserManager>()
         bind<BookManager>().to<DefaultBookManager>()
-        bind<PersistentMap>().to<MapMock>()
         bind<TokenManager>().to<DefaultTokenManager>()
+        install(SecureStorageModule)
+
+//        bind<SecureStorageFactory>().to<SecureStorageFactoryImpl>()
+//        bind<PersistentMap>().to<MapMock>()
+
 //        bind<SecureStorage>().to<SecureStorage>()
     }
 //    override fun configure() {

@@ -64,7 +64,7 @@ class SifriTaubIntegrationTest {
 
         assertThrows<IllegalArgumentException> { sifri.addBookToCatalog(eilon_token2, "a7", "oogah boogah", 8) }
 
-        assertEquals(sifri.listBookIds(eilon_token2), listOf("b1", "g2", "s3", "k4"))
+        assertEquals(sifri.listBookIds(eilon_token2, 4), listOf("b1", "g2", "s3", "k4"))
     }
 
     @Test

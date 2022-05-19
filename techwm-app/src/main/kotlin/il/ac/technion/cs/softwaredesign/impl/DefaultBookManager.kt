@@ -21,6 +21,7 @@ class DefaultBookManager @Inject constructor(private val persistentMap: Persiste
      */
     override fun getBookDescription(id: String): String {
         assert(isIdExists(id))
+
         val book = BookInfo(persistentMap.get(id)!!)
         return book.description
     }
