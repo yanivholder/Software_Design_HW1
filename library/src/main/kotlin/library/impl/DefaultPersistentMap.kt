@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream
 class DefaultPersistentMap @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap {
 
     private val secureStorageMaxSize = 100
+    private val metedataSize = 2
     private val masterKeyName = "keys-a"
 
     init {
@@ -74,22 +75,26 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
 
     private fun putMainLogic(key: String, serializedValue: ByteArray, isMasterKey: Boolean) {
         var currentKey = key
-        val serializedValueSize = serializedValue.size
+        var currentValueSize = serializedValue.size
         var currentIteration = 0
 
-        while(currentIteration * (secureStorageMaxSize - 1) < serializedValueSize) {
+        while(currentValueSize > 0) {
             val relevantPart = ByteArray(secureStorageMaxSize)
             System.arraycopy(
-                serializedValue, currentIteration * secureStorageMaxSize,
+                serializedValue, currentIteration * (secureStorageMaxSize - metedataSize) ,
                 relevantPart, 0,
-                if(serializedValueSize >= secureStorageMaxSize) (secureStorageMaxSize - 1) else serializedValueSize
+                if(currentValueSize >= (secureStorageMaxSize - metedataSize)) (secureStorageMaxSize - metedataSize) else currentValueSize
             )
 
-            if((currentIteration + 1) * (secureStorageMaxSize - 1) < serializedValueSize) {
+            if(currentValueSize > secureStorageMaxSize - metedataSize) {
                 relevantPart[relevantPart.size - 1] = 1 // Symbols that this is not the last part
+                relevantPart[relevantPart.size - 2] = 98 // Read 98 bytes from this part
             } else {
                 relevantPart[relevantPart.size - 1] = 0 // Symbols that this is the last part
+                relevantPart[relevantPart.size - 2] = currentValueSize.toByte()
             }
+
+            currentValueSize -= (secureStorageMaxSize - metedataSize)
 
             if(isMasterKey){
                 secureStorage.write(
@@ -107,8 +112,8 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
         }
     }
 
-    override fun put(key: String, serializedValue: ByteArray): Boolean {
-        putMainLogic(key, serializedValue, isMasterKey = false)
+    override fun put(key: String, value: ByteArray): Boolean {
+        putMainLogic(key, value, isMasterKey = false)
         addToMasterKey(key)
         return true
     }
@@ -142,12 +147,12 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
             // TODO bug
         }
 
-        val serializedValue = ByteArray(listOfParts.size * (secureStorageMaxSize - 1))
+        val serializedValue = ByteArray(listOfParts.size - 1 * (secureStorageMaxSize - metedataSize) + listOfParts.last()[98])
         for(i in listOfParts.indices) {
             System.arraycopy(
                 listOfParts[i], 0,
                 serializedValue, i * secureStorageMaxSize,
-                secureStorageMaxSize - 1
+                listOfParts[i][secureStorageMaxSize - 2].toInt()
             )
         }
         return serializedValue
