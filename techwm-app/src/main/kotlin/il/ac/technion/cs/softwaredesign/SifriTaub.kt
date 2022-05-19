@@ -11,12 +11,7 @@ import javax.inject.Inject
  */
 class SifriTaub @Inject constructor(private val userManager: UserManager, private val bookManager: BookManager){
 
-    // TODO - inject a UserManager, BookManager implementations (they will inject storage dependency to themselves)
-
-//    private val userManager: UserManager = userManagerImpl
-//    private val bookManager: BookManager = bookManagerImpl
-
-    /**
+     /**
      * Authenticate a user identified by [username] and [password].
      *
      * If successful, this method returns a unique authentication

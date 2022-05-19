@@ -10,10 +10,7 @@ import javax.inject.Inject
 
 class DefaultUserManager @Inject constructor(private val persistentMap: PersistentMap, private val tokenManager: TokenManager) : UserManager {
 
-    // Inject a storage dependency that implements [put, get, exists] to use below
 
-//    private val persistentMap: PersistentMap<UserInfo> = persistentMap
-//    private val tokenManager: TokenManager = tokenManager
     private val md = MessageDigest.getInstance("SHA-1")
 
     override fun isUsernameExists(username: String): Boolean {

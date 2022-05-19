@@ -5,6 +5,9 @@
 * Yaniv Holder, 207025297
 
 ## Notes
+Running the minimal staff test (TechWorkloadManagerStaffTest) doesn't pass because our write involves writing, 
+reading a unique (user keys are wrapped differently) master-key and then writing the user-key 
+(for persisting all keys in system), this causes our middle read to fail while expecting to read something that was written.
 
 ### Implementation Summary
 SifriTaub has two helper classes to manage its functionality:

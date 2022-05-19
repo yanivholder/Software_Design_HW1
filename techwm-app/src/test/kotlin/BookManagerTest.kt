@@ -23,9 +23,7 @@ class PersistentMapBookMockModule : KotlinModule() {
 }
 
 
-class BookManagerTest {//@Inject constructor(private val manager: BookManager){
-
-    // TODO - create mock for PersistentMap and send it to BookManager so we can test BookManager only
+class BookManagerTest {
 
     private val injector = Guice.createInjector(PersistentMapBookMockModule())
     private var manager = injector.getInstance<DefaultBookManager>()

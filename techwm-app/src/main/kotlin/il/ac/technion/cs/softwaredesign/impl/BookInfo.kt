@@ -25,9 +25,3 @@ data class BookInfo(var description: String = "", var copiesAmount: Int = 0) : B
         this.copiesAmount = obj.copiesAmount
     }
 }
-
-//class BookInfo constructor(desc: String, cAmout: Int){
-//    val description: String = desc
-//    val copiesAmount: Int = cAmout
-//    val timeOfLising = System.currentTimeMillis()
-//}

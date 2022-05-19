@@ -22,8 +22,6 @@ class PersistentMapUserMockModule : KotlinModule() {
 
 class UserManagerTest {
 
-    // TODO - create mock for secureStorage and send it to UserManager
-
     private val injector = Guice.createInjector(PersistentMapUserMockModule())
     private var manager = injector.getInstance<DefaultUserManager>()
 

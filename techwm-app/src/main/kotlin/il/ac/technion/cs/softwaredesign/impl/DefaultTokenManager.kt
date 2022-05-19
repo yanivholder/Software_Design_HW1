@@ -7,8 +7,6 @@ import javax.inject.Inject
 class DefaultTokenManager @Inject constructor(private val persistentMap: PersistentMap) : TokenManager{
 
 
-//    private val persistentMap: PersistentMap<Boolean> = pmf.createPersistentMap()
-
     // return true if and only if invalidation occurred successfully
     override fun invalidate(oldToken: String): Boolean{
         return persistentMap.put(oldToken, TokenInfo(false).serialize())
