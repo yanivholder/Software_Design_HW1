@@ -1,5 +1,3 @@
-package library
-
 interface PersistentMap {
 
     /**

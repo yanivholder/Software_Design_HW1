@@ -1,5 +1,4 @@
 plugins {
-    kotlin("plugin.serialization") version "1.6.10"
 }
 
 val junitVersion: String? by extra
@@ -14,8 +13,6 @@ dependencies {
 
     implementation("com.google.inject", "guice", guiceVersion)
     implementation("dev.misfitlabs.kotlinguice4", "kotlin-guice", kotlinGuiceVersion)
-
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
 
     testImplementation("org.junit.jupiter", "junit-jupiter-api", junitVersion)
     testImplementation("org.junit.jupiter", "junit-jupiter-params", junitVersion)

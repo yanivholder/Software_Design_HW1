@@ -1,22 +1,24 @@
 package il.ac.technion.cs.softwaredesign
 
-import com.google.inject.Guice
-import dev.misfitlabs.kotlinguice4.KotlinModule
-import dev.misfitlabs.kotlinguice4.getInstance
-import il.ac.technion.cs.softwaredesign.impl.DefaultBookManager
-import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 
 
 class SifriTaubTest {
+
+    // TODO: change to use Guice
+//    private val injector = Guice.createInjector(AppTestModule())
+//    private var sifriTaub = injector.getInstance<SifriTaub>()
+//
+//    @BeforeEach
+//    fun init(){
+//        sifriTaub = injector.getInstance()
+//    }
 
     private var userManagerMock: UserManager = mockk(relaxed = true)
     private var bookManagerMock: BookManager = mockk(relaxed = true)

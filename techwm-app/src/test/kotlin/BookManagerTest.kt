@@ -1,36 +1,21 @@
 package il.ac.technion.cs.softwaredesign
 
 import com.google.inject.Guice
-import dev.misfitlabs.kotlinguice4.KotlinModule
 import dev.misfitlabs.kotlinguice4.getInstance
-import il.ac.technion.cs.softwaredesign.impl.BookInfo
 import il.ac.technion.cs.softwaredesign.impl.DefaultBookManager
-import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
-import library.PersistentMap
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.assertThrows
-import javax.inject.Inject
-import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
-
-
-class PersistentMapBookMockModule : KotlinModule() {
-    override fun configure() {
-        bind<PersistentMap>().to<PersistentMapFake>()
-    }
-}
+import org.junit.jupiter.api.Test
 
 
 class BookManagerTest {
 
-    private val injector = Guice.createInjector(PersistentMapBookMockModule())
+    private val injector = Guice.createInjector(AppTestModule())
     private var manager = injector.getInstance<DefaultBookManager>()
 
     @BeforeEach
     fun init(){
-        manager = injector.getInstance<DefaultBookManager>()
+        manager = injector.getInstance()
     }
 
     @Test

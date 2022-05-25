@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 
 class SifriTaubIntegrationTest {
 
-    private val injector = Guice.createInjector(SifriTaubModule())
+    private val injector = Guice.createInjector(IntegrationalTestModule())
     private var sifri = injector.getInstance<SifriTaub>()
 
     @BeforeEach
