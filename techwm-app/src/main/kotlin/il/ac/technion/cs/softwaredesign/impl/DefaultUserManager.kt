@@ -22,6 +22,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         if (usr == null){
             return false
         }else{
+            /* The UserInfo(usr) wrapper is for deserializing */
             return (UserInfo(usr).password == password)
         }
     }
@@ -61,7 +62,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
     }
 
     override fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit {
-        val newUser = UserInfo(password, isFromCS, age)
+        val newUser = UserInfo(User(username, isFromCS, age), password)
         persistentMap.put(username, newUser.serialize())
     }
 
@@ -71,7 +72,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
      */
     override fun getUserInformation(username: String): User {
         assert(isUsernameExists(username))
-        val usr = UserInfo(persistentMap.get(username)!!)
-        return User(username, usr.isFromCS, usr.age)
+        val usrInfo = UserInfo(persistentMap.get(username)!!)
+        return User(username, usrInfo.user.isFromCS, usrInfo.user.age)
     }
 }

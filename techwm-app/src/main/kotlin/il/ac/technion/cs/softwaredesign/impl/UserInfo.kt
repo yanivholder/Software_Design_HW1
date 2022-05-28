@@ -14,7 +14,7 @@ import java.io.ObjectInputStream
  * @property tokenGenerated The Number of token generated for this user. Also the effective number of times the use authenticted.
 
  */
-data class UserInfo(var password: String = "", var isFromCS: Boolean = true, var age: Int = 0) : ByteSerializable {
+data class UserInfo(var user: User = User("",true,0), var password : String = "") : ByteSerializable {
     private var tokenGenerated: Int = 0
 
     constructor(byteArray: ByteArray): this() {
@@ -22,9 +22,8 @@ data class UserInfo(var password: String = "", var isFromCS: Boolean = true, var
         val ois = ObjectInputStream(bais)
         val obj = ois.readObject() as UserInfo
 
+        this.user = obj.user
         this.password = obj.password
-        this.isFromCS = obj.isFromCS
-        this.age = obj.age
         this.tokenGenerated = obj.tokenGenerated
     }
 
