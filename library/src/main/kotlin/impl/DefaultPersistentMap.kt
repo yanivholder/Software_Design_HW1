@@ -1,8 +1,8 @@
-package library.impl
+package impl
 
 import javax.inject.Inject
 
-import library.PersistentMap
+import PersistentMap
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

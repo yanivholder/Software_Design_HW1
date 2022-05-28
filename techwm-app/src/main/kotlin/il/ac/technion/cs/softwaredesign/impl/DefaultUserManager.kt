@@ -3,7 +3,7 @@ package il.ac.technion.cs.softwaredesign.impl
 import il.ac.technion.cs.softwaredesign.TokenManager
 import il.ac.technion.cs.softwaredesign.User
 import il.ac.technion.cs.softwaredesign.UserManager
-import library.PersistentMap
+import PersistentMap
 import java.security.MessageDigest
 import javax.inject.Inject
 

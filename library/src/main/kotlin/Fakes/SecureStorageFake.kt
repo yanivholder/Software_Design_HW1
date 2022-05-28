@@ -1,4 +1,4 @@
-package library
+package Fakes
 
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
 

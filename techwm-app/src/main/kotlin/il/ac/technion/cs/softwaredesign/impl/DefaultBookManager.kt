@@ -1,7 +1,7 @@
 package il.ac.technion.cs.softwaredesign.impl
 
 import il.ac.technion.cs.softwaredesign.BookManager
-import library.PersistentMap
+import PersistentMap
 import javax.inject.Inject
 
 class DefaultBookManager @Inject constructor(private val persistentMap: PersistentMap) : BookManager {

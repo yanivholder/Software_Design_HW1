@@ -5,29 +5,20 @@ import dev.misfitlabs.kotlinguice4.KotlinModule
 import dev.misfitlabs.kotlinguice4.getInstance
 import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
 import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
-import il.ac.technion.cs.softwaredesign.impl.UserInfo
-import library.PersistentMap
+import PersistentMap
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-
-class PersistentMapUserMockModule : KotlinModule() {
-    override fun configure() {
-        bind<PersistentMap>().to<PersistentMapFake>()
-        bind<TokenManager>().to<DefaultTokenManager>()
-    }
-}
-
 class UserManagerTest {
 
-    private val injector = Guice.createInjector(PersistentMapUserMockModule())
+    private val injector = Guice.createInjector(AppTestModule())
     private var manager = injector.getInstance<DefaultUserManager>()
 
     @BeforeEach
     fun init(){
-        manager = injector.getInstance<DefaultUserManager>()
+        manager = injector.getInstance()
     }
 
     @Test

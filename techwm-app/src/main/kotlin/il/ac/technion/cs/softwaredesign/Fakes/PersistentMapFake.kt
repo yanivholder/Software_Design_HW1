@@ -1,6 +1,6 @@
-package il.ac.technion.cs.softwaredesign
+package il.ac.technion.cs.softwaredesign.Fakes
 
-import library.PersistentMap
+import PersistentMap
 
 class PersistentMapFake : PersistentMap {
 

@@ -2,9 +2,7 @@ package library
 
 import com.google.inject.Guice
 import dev.misfitlabs.kotlinguice4.getInstance
-import io.mockk.InternalPlatformDsl.toArray
-import library.impl.DefaultPersistentMap
-import org.junit.jupiter.api.Assertions.assertArrayEquals
+import impl.DefaultPersistentMap
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -48,7 +46,7 @@ class ValueClass(var v1: String = "", var v2: Boolean = true, var v3: List<Int> 
 
 class PersistentMapTest {
 
-    private val injector = Guice.createInjector(PersistentMapTestModule())
+    private val injector = Guice.createInjector(LibraryTestModule())
     private var persistentMap = injector.getInstance<DefaultPersistentMap>()
 
     @BeforeEach
@@ -162,7 +160,7 @@ class PersistentMapTest {
 
         // Act
         map.forEach { entry -> persistentMap.put(entry.key, entry.value.serialize()) }
-        var res = persistentMap.getAllMap()
+        val res = persistentMap.getAllMap()
 
         // Assert
         for ((key, value) in map) {
