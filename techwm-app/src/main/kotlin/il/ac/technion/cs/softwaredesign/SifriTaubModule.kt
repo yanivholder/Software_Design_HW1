@@ -2,7 +2,7 @@ package il.ac.technion.cs.softwaredesign
 
 import dev.misfitlabs.kotlinguice4.KotlinModule
 import il.ac.technion.cs.softwaredesign.impl.DefaultBookManager
-import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
+import il.ac.technion.cs.softwaredesign.impl.DefaultTokenStore
 import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
 import LibraryProdModule
 
@@ -13,6 +13,6 @@ class SifriTaubModule: KotlinModule() {
         install(LibraryProdModule())
         bind<UserManager>().to<DefaultUserManager>()
         bind<BookManager>().to<DefaultBookManager>()
-        bind<TokenManager>().to<DefaultTokenManager>()
+        bind<TokenStore>().to<DefaultTokenStore>()
     }
 }

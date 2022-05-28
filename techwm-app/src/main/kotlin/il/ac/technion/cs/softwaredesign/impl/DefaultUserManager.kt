@@ -1,6 +1,6 @@
 package il.ac.technion.cs.softwaredesign.impl
 
-import il.ac.technion.cs.softwaredesign.TokenManager
+import il.ac.technion.cs.softwaredesign.TokenStore
 import il.ac.technion.cs.softwaredesign.User
 import il.ac.technion.cs.softwaredesign.UserManager
 import PersistentMap
@@ -8,7 +8,7 @@ import java.security.MessageDigest
 import javax.inject.Inject
 
 
-class DefaultUserManager @Inject constructor(private val persistentMap: PersistentMap, private val tokenManager: TokenManager) : UserManager {
+class DefaultUserManager @Inject constructor(private val persistentMap: PersistentMap, private val tokenStore: TokenStore) : UserManager {
 
 
     private val md = MessageDigest.getInstance("SHA-1")
@@ -27,7 +27,7 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
     }
 
     override fun isValidToken(token: String): Boolean {
-        return tokenManager.isValid(token)
+        return tokenStore.isValid(token)
     }
 
     private fun calculateToken(str: String, num: Int): String{
@@ -42,14 +42,14 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         if (numberForTokenGeneation != 0){
 
             val oldToken = calculateToken(username, numberForTokenGeneation-1)
-            if(tokenManager.invalidate(oldToken) == false){
+            if(tokenStore.invalidate(oldToken) == false){
                 // debugging purposes only, getting here means something went wrong
                 assert(false)
             }
         }
 
         val newToken = calculateToken(username, numberForTokenGeneation)
-        if (tokenManager.insert(newToken) == false){
+        if (tokenStore.insert(newToken) == false){
             // debugging purposes only, getting here means something went wrong
             assert(false)
         }

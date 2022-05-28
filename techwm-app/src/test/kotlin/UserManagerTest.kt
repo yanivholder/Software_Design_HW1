@@ -3,7 +3,7 @@ package il.ac.technion.cs.softwaredesign
 import com.google.inject.Guice
 import dev.misfitlabs.kotlinguice4.KotlinModule
 import dev.misfitlabs.kotlinguice4.getInstance
-import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
+import il.ac.technion.cs.softwaredesign.impl.DefaultTokenStore
 import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
 import PersistentMap
 import org.junit.jupiter.api.Assertions.assertEquals

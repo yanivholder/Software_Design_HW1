@@ -1,6 +1,6 @@
 package il.ac.technion.cs.softwaredesign
 
-interface TokenManager {
+interface TokenStore {
 
     // return true if and only if invalidation occurred successfully
     fun invalidate(oldToken: String): Boolean;

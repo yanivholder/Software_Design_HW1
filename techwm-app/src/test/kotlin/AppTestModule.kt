@@ -4,14 +4,14 @@ import PersistentMap
 import com.google.inject.Provides
 import dev.misfitlabs.kotlinguice4.KotlinModule
 import il.ac.technion.cs.softwaredesign.Fakes.PersistentMapFake
-import il.ac.technion.cs.softwaredesign.impl.DefaultTokenManager
+import il.ac.technion.cs.softwaredesign.impl.DefaultTokenStore
 import io.mockk.mockk
 
 class AppTestModule: KotlinModule() {
 
     override fun configure() {
         bind<PersistentMap>().to<PersistentMapFake>()
-        bind<TokenManager>().to<DefaultTokenManager>()
+        bind<TokenStore>().to<DefaultTokenStore>()
     }
 
     @Provides

@@ -1,10 +1,10 @@
 package il.ac.technion.cs.softwaredesign.impl
 
-import il.ac.technion.cs.softwaredesign.TokenManager
+import il.ac.technion.cs.softwaredesign.TokenStore
 import PersistentMap
 import javax.inject.Inject
 
-class DefaultTokenManager @Inject constructor(private val persistentMap: PersistentMap) : TokenManager{
+class DefaultTokenStore @Inject constructor(private val persistentMap: PersistentMap) : TokenStore{
 
 
     // return true if and only if invalidation occurred successfully

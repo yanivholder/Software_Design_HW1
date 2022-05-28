@@ -15,7 +15,7 @@ UserMamager & Book Manager -
 * BookManager is in charge of registering and querying books
 * UserMamager is in charge of registering and querying Users
 ***and*** also managing tokens (both generating, persisting and invalidating old ones) 
-For that purpose, UserManager hold another helper class -> TokenManager which gives us a 
+For that purpose, UserManager hold another helper class -> TokenStore which gives us a 
 nice abstraction for token handling
 
 All three ([User/Book/Token]Manager) use PersistentMap for persisting their data.
@@ -24,7 +24,7 @@ giving us unlimited sized values and also the option to retrieve the entire map.
 
 
 ### Testing Summary
-UserManager, BookManager and TokenManager were all unit-tested using a fully functional mock of the PersistentMap
+UserManager, BookManager and TokenStore were all unit-tested using a fully functional mock of the PersistentMap
 That is because it's very easy to supply said fake (a simple map).
 
 PersistentMap was unit-tested using a fully functional mock of the SecureStorage (also easy to implement)
