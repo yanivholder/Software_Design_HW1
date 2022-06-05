@@ -10,13 +10,17 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import javax.lang.model.type.NullType
+import kotlin.system.exitProcess
 
 class DefaultPersistentMap @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap {
 
     private val secureStorageMaxSize = 100
     private val metedataSize = 2
     private val masterKeyName = "keys-a"
-    private val executor = Executors.newCachedThreadPool()
+    private val executors = Executors.newCachedThreadPool()
+    private val newWriteFutures: Set<CompletableFuture<Unit>> = HashSet()
 
     init {
         this.initMasterKey()
@@ -68,59 +72,79 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
         putMainLogic(masterKeyName, serialize(mutableListOf<String>()), true)
     }
 
-    private fun addToMasterKey(key: String) {
-        val currentMasterKeyListSerialized = getMainLogic(masterKeyName, isMasterKey = true)
+    private fun addToMasterKey(key: String): CompletableFuture<Unit> {
+        val currentMasterKeyListSerialized = getMainLogic(masterKeyName, isMasterKey = true).get()
+        if(currentMasterKeyListSerialized == null) {
+            // BUG
+            exitProcess(1)
+        }
         val currentMasterKeyList = deserializeStringList(currentMasterKeyListSerialized)
         currentMasterKeyList.add(key)
-        putMainLogic(masterKeyName, serialize(currentMasterKeyList), true)
+        return putMainLogic(masterKeyName, serialize(currentMasterKeyList), true)
     }
 
-    private fun putMainLogic(key: String, serializedValue: ByteArray, isMasterKey: Boolean) {
-        var currentKey = key
-        var currentValueSize = serializedValue.size
-        var currentIteration = 0
+    private fun putMainLogic(key: String, serializedValue: ByteArray, isMasterKey: Boolean): CompletableFuture<Unit> {
+        val future: CompletableFuture<Unit> = CompletableFuture()
 
-        while(currentValueSize > 0) {
-            val relevantPart = ByteArray(secureStorageMaxSize)
-            System.arraycopy(
-                serializedValue, currentIteration * (secureStorageMaxSize - metedataSize) ,
-                relevantPart, 0,
-                if(currentValueSize >= (secureStorageMaxSize - metedataSize)) (secureStorageMaxSize - metedataSize) else currentValueSize
-            )
+        executors.submit {
+            val future_set: Set<Future<Unit>> = HashSet()
+            var currentKey = key
+            var currentValueSize = serializedValue.size
+            var currentIteration = 0
 
-            if(currentValueSize > secureStorageMaxSize - metedataSize) {
-                relevantPart[relevantPart.size - 1] = 1 // Symbols that this is not the last part
-                relevantPart[relevantPart.size - 2] = 98 // Read 98 bytes from this part
-            } else {
-                relevantPart[relevantPart.size - 1] = 0 // Symbols that this is the last part
-                relevantPart[relevantPart.size - 2] = currentValueSize.toByte()
-            }
-
-            currentValueSize -= (secureStorageMaxSize - metedataSize)
-
-            if(isMasterKey){
-                secureStorage.write(
-                    key = serialize(currentKey),
-                    value = relevantPart
+            while (currentValueSize > 0) {
+                val relevantPart = ByteArray(secureStorageMaxSize)
+                System.arraycopy(
+                    serializedValue, currentIteration * (secureStorageMaxSize - metedataSize),
+                    relevantPart, 0,
+                    if (currentValueSize >= (secureStorageMaxSize - metedataSize)) (secureStorageMaxSize - metedataSize) else currentValueSize
                 )
-                currentKey = increaseLex(currentKey)
-            } else {
-                secureStorage.write(
-                    key = serialize(key + currentIteration.toString()),
-                    value = relevantPart
-                )
+
+                if (currentValueSize > secureStorageMaxSize - metedataSize) {
+                    relevantPart[relevantPart.size - 1] = 1 // Symbols that this is not the last part
+                    relevantPart[relevantPart.size - 2] = 98 // Read 98 bytes from this part
+                } else {
+                    relevantPart[relevantPart.size - 1] = 0 // Symbols that this is the last part
+                    relevantPart[relevantPart.size - 2] = currentValueSize.toByte()
+                }
+
+                currentValueSize -= (secureStorageMaxSize - metedataSize)
+
+                if (isMasterKey) {
+                    val writeFuture = secureStorage.write(
+                        key = serialize(currentKey),
+                        value = relevantPart
+                    )
+                    future_set.plus(writeFuture)
+                    this.newWriteFutures.plus(writeFuture)
+                    currentKey = increaseLex(currentKey)
+                } else {
+                    val writeFuture = secureStorage.write(
+                        key = serialize(currentKey),
+                        value = relevantPart
+                    )
+                    future_set.plus(writeFuture)
+                    this.newWriteFutures.plus(writeFuture)
+                }
+                currentIteration++
             }
-            currentIteration++
+            future_set.forEach { it.get()}
+            // TODO: try to the future_set to ...
+//            CompletableFuture.allOf(future_set)
+            future.complete(Unit)
         }
+        return future
     }
 
-    override fun put(key: String, value: ByteArray): CompletableFuture<Boolean> {
-        putMainLogic(key, value, isMasterKey = false)
-        addToMasterKey(key)
-        return true
+    override fun put(key: String, value: ByteArray): CompletableFuture<Void> {
+        val putMainFuture = putMainLogic(key, value, isMasterKey = false)
+        val addToMasterKeyFuture = addToMasterKey(key)
+        return CompletableFuture.allOf(putMainFuture, addToMasterKeyFuture)
     }
 
-    private fun getMainLogic(key: String, isMasterKey: Boolean): ByteArray {
+    private fun getMainLogic(key: String, isMasterKey: Boolean): CompletableFuture<ByteArray?> {
+        // TODO: turn this code to parallel (change the reads get)
+        // TODO: add the check of the write future to see that the read will succeed
         val listOfParts = mutableListOf<ByteArray>()
         var currentIteration = 0
 
@@ -131,7 +155,7 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
             currentKey = serialize(key + currentIteration.toString())
         }
 
-        var currentPart = secureStorage.read(currentKey)
+        var currentPart = secureStorage.read(currentKey).get()
 
         while(currentPart != null) {
             listOfParts.add(currentPart)
@@ -143,7 +167,8 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
                 currentKey = serialize(key + currentIteration.toString())
             }
 
-            currentPart = secureStorage.read(currentKey)
+            currentPart = secureStorage.read(currentKey).get()
+
         }
         if(currentIteration == 0) {
             // TODO bug
@@ -157,23 +182,38 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
                 listOfParts[i][secureStorageMaxSize - 2].toInt()
             )
         }
-        return serializedValue
+        // TODO: erase
+        val future: CompletableFuture<ByteArray?> = CompletableFuture()
+        future.complete(serializedValue)
+        return future
     }
 
-    override fun get(key: String): ByteArray? {
-        if (!exists(key)) {
-            return null
+    override fun get(key: String): CompletableFuture<ByteArray?> {
+        val future: CompletableFuture<ByteArray?> = CompletableFuture()
+        if (!exists(key).get()) {
+            future.complete(null)
+            return future
         }
         return getMainLogic(key, false)
     }
 
-    override fun exists(key: String): Boolean {
-        return secureStorage.read(serialize(key + "0")) != null
+    override fun exists(key: String): CompletableFuture<Boolean> {
+        return secureStorage.read(serialize(key + "0")).get() != null
     }
 
-    override fun getAllMap(): Map<String, ByteArray?> {
-        val keyListByteArray = getMainLogic(masterKeyName, true)
-        val keyList = deserializeStringList(keyListByteArray)
-        return keyList.associateWith { get(it) }
+    override fun getAllMap(): CompletableFuture<Map<String, ByteArray?>> {
+        val future: CompletableFuture<Map<String, ByteArray?>> = CompletableFuture()
+
+        executors.submit {
+            val keyListByteArray: ByteArray? = getMainLogic(masterKeyName, true).get()
+            if(keyListByteArray == null) {
+                // BUG
+                exitProcess(1)
+            }
+            val keyList = deserializeStringList(keyListByteArray)
+            future.complete(keyList.associateWith { this.get(it).get() })
+        }
+
+        return future
     }
 }

@@ -8,7 +8,7 @@ interface PersistentMap {
      *
      * @throws ?
      */
-    fun put(key: String, value: ByteArray): CompletableFuture<Boolean>
+    fun put(key: String, value: ByteArray): CompletableFuture<Void>
 
     /**
      *
