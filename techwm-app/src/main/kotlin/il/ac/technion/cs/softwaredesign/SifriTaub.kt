@@ -26,10 +26,23 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @return An authentication token to be used in future calls.
      */
     fun authenticate(username: String, password: String): CompletableFuture<String> {
-        if(!userManager.isUsernameAndPassMatch(username = username, password = password).get()) {
-            throw IllegalArgumentException();
+        userManager.isUsernameAndPassMatch(username = username, password = password).thenApply { match ->
+         if (!match) {
+             throw IllegalArgumentException() }
         }
         return userManager.generateUserTokenAndInvalidateOld(username = username)
+    }
+
+    /**
+     * This method check token validity.
+     * If the token is valid, do nothing.
+     * If not - throws PermissionException
+     */
+    private fun checkToken(token: String): Unit{
+        userManager.isValidToken(token = token).thenApply { tokenValid ->
+            if (!tokenValid) {
+                throw PermissionException() }
+        }
     }
 
     /**
@@ -45,9 +58,14 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If a user with the same [username] already exists or the [age] is negative.
      */
     fun register(username: String, password: String, isFromCS: Boolean, age: Int): CompletableFuture<Unit> {
-        if(userManager.isUsernameExists(username = username).get() || age < 0) {
+        if(age < 0){
             throw IllegalArgumentException()
         }
+        userManager.isUsernameExists(username = username).thenApply { userNameExists ->
+            if (userNameExists) {
+                throw IllegalArgumentException() }
+        }
+
         return userManager.register(
             username = username,
             password = password,
@@ -70,10 +88,7 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * return `null`, indicating that there is no such user
      */
     fun userInformation(token: String, username: String): CompletableFuture<User?> {
-        userManager.isValidToken(token = token).thenApply { tokenValidity ->
-            if (!tokenValidity) {
-                throw PermissionException() }
-            }
+        checkToken(token)
 
         var isUserExists: Boolean = true
         userManager.isUsernameExists(username = username).thenApply { usernameExists ->
@@ -101,12 +116,11 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If a book with the same [id] already exists.
      */
     fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): CompletableFuture<Unit> {
+        checkToken(token)
 
-        if(!userManager.isValidToken(token = token).get()) {
-            throw PermissionException();
-        }
-        if(bookManager.isIdExists(id = id).get()) {
-            throw IllegalArgumentException();
+        bookManager.isIdExists(id = id).thenApply { bookIdExists ->
+            if (bookIdExists) {
+                throw IllegalArgumentException() }
         }
         return bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
     }
@@ -123,11 +137,11 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @return A description string of the book with [id]
      */
     fun getBookDescription(token: String, id: String): CompletableFuture<String> {
-        if(!userManager.isValidToken(token = token).get()) {
-            throw PermissionException()
-        }
-        if (!bookManager.isIdExists(id = id).get()) {
-            throw IllegalArgumentException()
+        checkToken(token)
+
+        bookManager.isIdExists(id = id).thenApply { bookIdExists ->
+            if (!bookIdExists) {
+                throw IllegalArgumentException() }
         }
         return bookManager.getBookDescription(id = id)
     }
@@ -144,10 +158,8 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * If there are less than [n] ids of books, this method returns a list of all book ids (sorted as defined above).
      */
     fun listBookIds(token: String, n: Int = 10): CompletableFuture<List<String>> {
+        checkToken(token)
 
-        if(!userManager.isValidToken(token = token).get()) {
-            throw PermissionException();
-        }
         return bookManager.getFirstBooksByAddTime(numOfBooks = n)
     }
 
