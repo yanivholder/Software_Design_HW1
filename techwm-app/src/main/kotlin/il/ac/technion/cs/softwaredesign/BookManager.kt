@@ -4,7 +4,7 @@ import java.util.concurrent.CompletableFuture
 interface BookManager {
 
 
-    fun isIdExists(id: String): CompletableFuture<Boolean>
+    fun isIdExists(id: String): Boolean
 
     fun addBook(id: String, description: String, copiesAmount: Int): CompletableFuture<Unit>
 
