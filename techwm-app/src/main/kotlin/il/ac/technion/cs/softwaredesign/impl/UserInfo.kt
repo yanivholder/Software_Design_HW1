@@ -18,10 +18,12 @@ data class UserInfo(var user: User = User("",true,0), var password : String = ""
     private var tokenGenerated: Int = 0
 
     constructor(byteArray: ByteArray): this() {
-        val bais = ByteArrayInputStream(byteArray)
-        val ois = ObjectInputStream(bais)
-        val obj = ois.readObject() as UserInfo
+        // TODO - remove
+//        val bais = ByteArrayInputStream(byteArray)
+//        val ois = ObjectInputStream(bais)
+//        val obj = ois.readObject() as UserInfo
 
+        val obj = deserialize(byteArray) as UserInfo
         this.user = obj.user
         this.password = obj.password
         this.tokenGenerated = obj.tokenGenerated
