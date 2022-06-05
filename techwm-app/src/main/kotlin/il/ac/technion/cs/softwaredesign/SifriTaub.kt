@@ -27,9 +27,9 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun authenticate(username: String, password: String): CompletableFuture<String> {
         if(!userManager.isUsernameAndPassMatch(username = username, password = password)) {
-            throw IllegalArgumentException();
+            throw IllegalArgumentException()
         }
-        return userManager.generateUserTokenAndInvalidateOld(username = username);
+        return userManager.generateUserTokenAndInvalidateOld(username = username)
     }
 
     /**
@@ -46,7 +46,7 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun register(username: String, password: String, isFromCS: Boolean, age: Int): CompletableFuture<Unit> {
         if(userManager.isUsernameExists(username = username) || age < 0) {
-            throw IllegalArgumentException();
+            throw IllegalArgumentException()
         }
         userManager.register(
             username = username,
@@ -71,12 +71,12 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun userInformation(token: String, username: String): CompletableFuture<User?> {
         if(!userManager.isValidToken(token = token)) {
-            throw PermissionException();
+            throw PermissionException()
         }
         if(!userManager.isUsernameExists(username = username)) {
-            return null;
+            return null
         }
-        return userManager.getUserInformation(username = username);
+        return userManager.getUserInformation(username = username)
     }
 
     /**
@@ -94,12 +94,12 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): CompletableFuture<Unit> {
         if(!userManager.isValidToken(token = token)) {
-            throw PermissionException();
+            throw PermissionException()
         }
         if(bookManager.isIdExists(id = id)) {
-            throw IllegalArgumentException();
+            throw IllegalArgumentException()
         }
-        return bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount);
+        return bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
     }
 
     /**
@@ -115,12 +115,12 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun getBookDescription(token: String, id: String): CompletableFuture<String> {
         if(!userManager.isValidToken(token = token)) {
-            throw PermissionException();
+            throw PermissionException()
         }
         if (!bookManager.isIdExists(id = id)) {
-            throw IllegalArgumentException();
+            throw IllegalArgumentException()
         }
-        return bookManager.getBookDescription(id = id);
+        return bookManager.getBookDescription(id = id)
     }
 
     /**
@@ -136,9 +136,9 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun listBookIds(token: String, n: Int = 10): CompletableFuture<List<String>> {
         if(!userManager.isValidToken(token = token)) {
-            throw PermissionException();
+            throw PermissionException()
         }
-        return bookManager.getFirstBooksByAddTime(numOfBooks = n);
+        return bookManager.getFirstBooksByAddTime(numOfBooks = n)
     }
 
     /**

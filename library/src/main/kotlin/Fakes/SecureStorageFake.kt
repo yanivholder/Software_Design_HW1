@@ -17,10 +17,10 @@ class SecureStorageFake : SecureStorage {
         if(value.size > 100) {
             throw IllegalArgumentException()
         }
-        map[ByteArrayKey(key)] = value;
+        map[ByteArrayKey(key)] = value
     }
 
     override fun read(key: ByteArray): ByteArray? {
-        return map[ByteArrayKey(key)];
+        return map[ByteArrayKey(key)]
     }
 }

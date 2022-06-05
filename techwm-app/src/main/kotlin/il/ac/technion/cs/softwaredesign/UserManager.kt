@@ -4,19 +4,19 @@ import il.ac.technion.cs.softwaredesign.impl.UserInfo
 
 interface UserManager {
 
-    fun isUsernameExists(username: String): Boolean;
+    fun isUsernameExists(username: String): Boolean
 
-    fun isUsernameAndPassMatch(username: String, password: String): Boolean;
+    fun isUsernameAndPassMatch(username: String, password: String): Boolean
 
-    fun isValidToken(token: String): Boolean;
+    fun isValidToken(token: String): Boolean
 
-    fun generateUserTokenAndInvalidateOld(username: String): String;
+    fun generateUserTokenAndInvalidateOld(username: String): String
 
-    fun register(username: String, password: String, isFromCS: Boolean, age: Int): Unit;
+    fun register(username: String, password: String, isFromCS: Boolean, age: Int)
 
     /**
      * @note This function assumes that the user does exist
      * and it's behaviour is undefined if called for non-existing user
      */
-    fun getUserInformation(username: String): User;
+    fun getUserInformation(username: String): User
 }

@@ -8,7 +8,7 @@ class PersistentMapFake : PersistentMap {
 
     override fun put(key: String, value: ByteArray): Boolean {
         map[key] = value
-        return true;
+        return true
     }
     override fun get(key: String): ByteArray? {
         return map[key]
