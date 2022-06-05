@@ -13,10 +13,11 @@ import java.io.ObjectInputStream
 data class TokenInfo(private var tokenValidity: Boolean = false) : ByteSerializable {
 
     constructor(byteArray: ByteArray): this() {
-        val bais = ByteArrayInputStream(byteArray)
-        val ois = ObjectInputStream(bais)
-        val obj = ois.readObject() as TokenInfo
-
+        // TODO - remove
+//        val bais = ByteArrayInputStream(byteArray)
+//        val ois = ObjectInputStream(bais)
+//        val obj = ois.readObject() as TokenInfo
+        val obj = deserialize(byteArray) as TokenInfo
         this.tokenValidity = obj.getValidity()
     }
 

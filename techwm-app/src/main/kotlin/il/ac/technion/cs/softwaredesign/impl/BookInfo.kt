@@ -17,10 +17,11 @@ data class BookInfo(var description: String = "", var copiesAmount: Int = 0) : B
     val timeOfLising = System.currentTimeMillis()
 
     constructor(byteArray: ByteArray): this() {
-        val bais = ByteArrayInputStream(byteArray)
-        val ois = ObjectInputStream(bais)
-        val obj = ois.readObject() as BookInfo
-
+        // TODO - remove
+//        val bais = ByteArrayInputStream(byteArray)
+//        val ois = ObjectInputStream(bais)
+//        val obj = ois.readObject() as BookInfo
+        val obj = deserialize(byteArray) as BookInfo
         this.description = obj.description
         this.copiesAmount = obj.copiesAmount
     }
