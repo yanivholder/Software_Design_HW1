@@ -8,12 +8,15 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 
 class DefaultPersistentMap @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap {
 
     private val secureStorageMaxSize = 100
     private val metedataSize = 2
     private val masterKeyName = "keys-a"
+    private val executor = Executors.newCachedThreadPool()
 
     init {
         this.initMasterKey()
@@ -111,7 +114,7 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
         }
     }
 
-    override fun put(key: String, value: ByteArray): Boolean {
+    override fun put(key: String, value: ByteArray): CompletableFuture<Boolean> {
         putMainLogic(key, value, isMasterKey = false)
         addToMasterKey(key)
         return true
