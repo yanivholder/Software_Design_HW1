@@ -1,3 +1,5 @@
+import java.util.concurrent.CompletableFuture
+
 interface PersistentMap {
 
     /**
@@ -6,7 +8,7 @@ interface PersistentMap {
      *
      * @throws ?
      */
-    fun put(key: String, value: ByteArray): Boolean
+    fun put(key: String, value: ByteArray): CompletableFuture<Boolean>
 
     /**
      *
@@ -14,7 +16,7 @@ interface PersistentMap {
      *
      * @throws ?
      */
-    fun get(key: String): ByteArray?
+    fun get(key: String): CompletableFuture<ByteArray?>
 
     /**
      *
@@ -22,7 +24,7 @@ interface PersistentMap {
      *
      * @throws ?
      */
-    fun exists(key: String): Boolean
+    fun exists(key: String): CompletableFuture<Boolean>
 
     /**
      *
@@ -30,5 +32,5 @@ interface PersistentMap {
      *
      * @throws ?
      */
-    fun getAllMap(): Map<String, ByteArray?>
+    fun getAllMap(): CompletableFuture<Map<String, ByteArray?>>
 }
