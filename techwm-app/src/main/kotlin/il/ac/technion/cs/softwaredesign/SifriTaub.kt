@@ -26,11 +26,11 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @return An authentication token to be used in future calls.
      */
     fun authenticate(username: String, password: String): CompletableFuture<String> {
-        userManager.isUsernameAndPassMatch(username = username, password = password).thenApply { match ->
+         val match = userManager.isUsernameAndPassMatch(username = username, password = password)
          if (!match) {
-             throw IllegalArgumentException() }
-        }
-        return userManager.generateUserTokenAndInvalidateOld(username = username)
+             throw IllegalArgumentException()
+         }
+         return userManager.generateUserTokenAndInvalidateOld(username = username)
     }
 
     /**
@@ -39,9 +39,8 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * If not - throws PermissionException
      */
     private fun checkToken(token: String): Unit{
-        userManager.isValidToken(token = token).thenApply { tokenValid ->
-            if (!tokenValid) {
-                throw PermissionException() }
+        if (!userManager.isValidToken(token = token)) {
+                throw PermissionException()
         }
     }
 
@@ -58,12 +57,8 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If a user with the same [username] already exists or the [age] is negative.
      */
     fun register(username: String, password: String, isFromCS: Boolean, age: Int): CompletableFuture<Unit> {
-        if(age < 0){
+        if(age < 0 || userManager.isUsernameExists(username = username)){
             throw IllegalArgumentException()
-        }
-        userManager.isUsernameExists(username = username).thenApply { userNameExists ->
-            if (userNameExists) {
-                throw IllegalArgumentException() }
         }
 
         return userManager.register(
@@ -90,14 +85,8 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun userInformation(token: String, username: String): CompletableFuture<User?> {
         checkToken(token)
 
-        var isUserExists: Boolean = true
-        userManager.isUsernameExists(username = username).thenApply { usernameExists ->
-            if (!usernameExists)
-                isUserExists = false
-        }
-        if (!isUserExists){
+        if(!userManager.isUsernameExists(username = username))
             return CompletableFuture.completedFuture(null)
-        }
 
         return userManager.getUserInformation(username = username)
     }
@@ -118,9 +107,8 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): CompletableFuture<Unit> {
         checkToken(token)
 
-        bookManager.isIdExists(id = id).thenApply { bookIdExists ->
-            if (bookIdExists) {
-                throw IllegalArgumentException() }
+        if (bookManager.isIdExists(id = id)){
+                throw IllegalArgumentException()
         }
         return bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
     }
@@ -139,9 +127,8 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun getBookDescription(token: String, id: String): CompletableFuture<String> {
         checkToken(token)
 
-        bookManager.isIdExists(id = id).thenApply { bookIdExists ->
-            if (!bookIdExists) {
-                throw IllegalArgumentException() }
+        if (!bookManager.isIdExists(id = id)){
+                throw IllegalArgumentException()
         }
         return bookManager.getBookDescription(id = id)
     }
