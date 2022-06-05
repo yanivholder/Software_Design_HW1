@@ -1,6 +1,7 @@
 package Fakes
 
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
+import java.util.concurrent.CompletableFuture
 
 class ByteArrayKey(private val key: ByteArray) {
     override fun equals(other: Any?): Boolean =
@@ -13,14 +14,15 @@ class SecureStorageFake : SecureStorage {
 
     private var map = mutableMapOf<ByteArrayKey, ByteArray>()
 
-    override fun write(key: ByteArray, value: ByteArray) {
+    override fun write(key: ByteArray, value: ByteArray): CompletableFuture<Unit> {
         if(value.size > 100) {
             throw IllegalArgumentException()
         }
         map[ByteArrayKey(key)] = value
+        return CompletableFuture.completedFuture(Unit)
     }
 
-    override fun read(key: ByteArray): ByteArray? {
-        return map[ByteArrayKey(key)]
+    override fun read(key: ByteArray): CompletableFuture<ByteArray?> {
+        return CompletableFuture.completedFuture(map[ByteArrayKey(key)])
     }
 }

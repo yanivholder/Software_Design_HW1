@@ -136,10 +136,19 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
         return future
     }
 
-    override fun put(key: String, value: ByteArray): CompletableFuture<Void> {
-        val putMainFuture = putMainLogic(key, value, isMasterKey = false)
-        val addToMasterKeyFuture = addToMasterKey(key)
-        return CompletableFuture.allOf(putMainFuture, addToMasterKeyFuture)
+    override fun put(key: String, value: ByteArray): CompletableFuture<Unit> {
+        val future: CompletableFuture<Unit> = CompletableFuture()
+
+        executors.submit {
+            val putMainFuture = putMainLogic(key, value, isMasterKey = false)
+            val addToMasterKeyFuture = addToMasterKey(key)
+            putMainFuture.get()
+            addToMasterKeyFuture.get()
+            future.complete(Unit)
+        }
+
+        return future
+//        return CompletableFuture.allOf(putMainFuture, addToMasterKeyFuture)
     }
 
     private fun getMainLogic(key: String, isMasterKey: Boolean): CompletableFuture<ByteArray?> {
@@ -190,14 +199,14 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
 
     override fun get(key: String): CompletableFuture<ByteArray?> {
         val future: CompletableFuture<ByteArray?> = CompletableFuture()
-        if (!exists(key).get()) {
+        if (!exists(key)) {
             future.complete(null)
             return future
         }
         return getMainLogic(key, false)
     }
 
-    override fun exists(key: String): CompletableFuture<Boolean> {
+    override fun exists(key: String): Boolean {
         return secureStorage.read(serialize(key + "0")).get() != null
     }
 

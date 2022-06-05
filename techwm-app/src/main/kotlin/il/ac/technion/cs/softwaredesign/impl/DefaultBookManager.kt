@@ -10,7 +10,7 @@ import kotlin.concurrent.thread
 class DefaultBookManager @Inject constructor(private val persistentMap: PersistentMap) : BookManager {
 
     override fun isIdExists(id: String): Boolean {
-        return persistentMap.exists(id).get()
+        return persistentMap.exists(id)
     }
 
     override fun addBook(id: String, description: String, copiesAmount: Int): CompletableFuture<Unit> {
