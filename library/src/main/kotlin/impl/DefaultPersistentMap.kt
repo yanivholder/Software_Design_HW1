@@ -205,7 +205,7 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
     }
     
     override fun exists(key: String): Boolean {
-        return secureStorage.read(serialize(key + "0")) != null
+        return secureStorage.read(serialize(key + "0")).get() != null
     }
 
     override fun getAllMap(): CompletableFuture<Map<String, ByteArray?>> {
