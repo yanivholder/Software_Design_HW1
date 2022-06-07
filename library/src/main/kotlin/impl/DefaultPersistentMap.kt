@@ -11,7 +11,6 @@ import java.io.ObjectOutputStream
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import javax.lang.model.type.NullType
 import kotlin.system.exitProcess
 
 class DefaultPersistentMap @Inject constructor(private val secureStorage: SecureStorage) : PersistentMap {
@@ -20,7 +19,6 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
     private val metedataSize = 2
     private val masterKeyName = "keys-a"
     private val executors = Executors.newCachedThreadPool()
-    private val newWriteFutures: Set<CompletableFuture<Unit>> = HashSet()
 
     init {
         this.initMasterKey()
@@ -116,7 +114,7 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
                         value = relevantPart
                     )
                     future_set.plus(writeFuture)
-                    this.newWriteFutures.plus(writeFuture)
+//                    this.newWriteFutures.plus(writeFuture)
                     currentKey = increaseLex(currentKey)
                 } else {
                     val writeFuture = secureStorage.write(
@@ -124,7 +122,7 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
                         value = relevantPart
                     )
                     future_set.plus(writeFuture)
-                    this.newWriteFutures.plus(writeFuture)
+//                    this.newWriteFutures.plus(writeFuture)
                 }
                 currentIteration++
             }
@@ -199,15 +197,15 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
 
     override fun get(key: String): CompletableFuture<ByteArray?> {
         val future: CompletableFuture<ByteArray?> = CompletableFuture()
-        if (!exists(key)) {
+        if (!exists(key).get()) {
             future.complete(null)
             return future
         }
         return getMainLogic(key, false)
     }
-
-    override fun exists(key: String): Boolean {
-        return secureStorage.read(serialize(key + "0")).get() != null
+    
+    override fun exists(key: String): CompletableFuture<Boolean> {
+        return CompletableFuture.completedFuture(secureStorage.read(serialize(key + "0")).get() != null)
     }
 
     override fun getAllMap(): CompletableFuture<Map<String, ByteArray?>> {

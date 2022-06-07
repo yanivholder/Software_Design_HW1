@@ -24,7 +24,7 @@ interface PersistentMap {
      *
      * @throws ?
      */
-    fun exists(key: String): Boolean
+    fun exists(key: String): CompletableFuture<Boolean>
 
     /**
      *

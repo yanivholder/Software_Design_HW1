@@ -1,6 +1,3 @@
-plugins {
-}
-
 val junitVersion: String? by extra
 val hamkrestVersion: String? by extra
 val mockkVersion: String? by extra

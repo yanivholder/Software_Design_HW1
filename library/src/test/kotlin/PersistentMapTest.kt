@@ -41,7 +41,6 @@ class ValueClass(var v1: String = "", var v2: Boolean = true, var v3: List<Int> 
         result = 31 * result + v3.hashCode()
         return result
     }
-
 }
 
 class PersistentMapTest {
@@ -76,7 +75,7 @@ class PersistentMapTest {
         val res = persistentMap.get(key)
 
         // Assert
-        assertEquals(ValueClass(res), value)
+        assertEquals(ValueClass(res.get()), value)
     }
 
     @Test
@@ -90,7 +89,7 @@ class PersistentMapTest {
         val res = persistentMap.get(key)
 
         // Assert
-        assertEquals(ValueClass(res), value)
+        assertEquals(ValueClass(res.get()), value)
     }
 
     @Test
@@ -106,7 +105,7 @@ class PersistentMapTest {
 
         // Assert
         assertEquals(resBeforePut, null)
-        assertEquals(ValueClass(resAfterPut), value)
+        assertEquals(ValueClass(resAfterPut.get()), value)
     }
 
     @Test
@@ -123,8 +122,8 @@ class PersistentMapTest {
         val resAfterPut = persistentMap.get(key)
 
         // Assert
-        assertEquals(ValueClass(resBeforePut), value1)
-        assertEquals(ValueClass(resAfterPut), value2)
+        assertEquals(ValueClass(resBeforePut.get()), value1)
+        assertEquals(ValueClass(resAfterPut.get()), value2)
     }
 
     @Test
@@ -160,7 +159,7 @@ class PersistentMapTest {
 
         // Act
         map.forEach { entry -> persistentMap.put(entry.key, entry.value.serialize()) }
-        val res = persistentMap.getAllMap()
+        val res = persistentMap.getAllMap().get()
 
         // Assert
         for ((key, value) in map) {
