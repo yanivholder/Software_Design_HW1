@@ -58,7 +58,7 @@ class PersistentMapTest {
         // Arrange
 
         // Act
-        val res = persistentMap.get("someKey")
+        val res = persistentMap.get("someKey").get()
 
         // Assert
         assertEquals(res, null)
@@ -71,11 +71,11 @@ class PersistentMapTest {
         val value = ValueClass("someValue")
 
         // Act
-        persistentMap.put(key, value.serialize())
-        val res = persistentMap.get(key)
+        persistentMap.put(key, value.serialize()).get()
+        val res = persistentMap.get(key).get()
 
         // Assert
-        assertEquals(ValueClass(res.get()), value)
+        assertEquals(ValueClass(res), value)
     }
 
     @Test
@@ -85,11 +85,11 @@ class PersistentMapTest {
         val value = ValueClass(v3 = (1..10000).toList())
 
         // Act
-        persistentMap.put(key, value.serialize())
-        val res = persistentMap.get(key)
+        persistentMap.put(key, value.serialize()).get()
+        val res = persistentMap.get(key).get()
 
         // Assert
-        assertEquals(ValueClass(res.get()), value)
+        assertEquals(ValueClass(res), value)
     }
 
     @Test
@@ -99,13 +99,13 @@ class PersistentMapTest {
         val value = ValueClass("someValue")
 
         // Act
-        val resBeforePut = persistentMap.get(key)
-        persistentMap.put(key, value.serialize())
-        val resAfterPut = persistentMap.get(key)
+        val resBeforePut = persistentMap.get(key).get()
+        persistentMap.put(key, value.serialize()).get()
+        val resAfterPut = persistentMap.get(key).get()
 
         // Assert
         assertEquals(resBeforePut, null)
-        assertEquals(ValueClass(resAfterPut.get()), value)
+        assertEquals(ValueClass(resAfterPut), value)
     }
 
     @Test
@@ -116,14 +116,14 @@ class PersistentMapTest {
         val value2 = ValueClass("second someValue")
 
         // Act
-        persistentMap.put(key, value1.serialize())
-        val resBeforePut = persistentMap.get(key)
-        persistentMap.put(key, value2.serialize())
-        val resAfterPut = persistentMap.get(key)
+        persistentMap.put(key, value1.serialize()).get()
+        val resBeforePut = persistentMap.get(key).get()
+        persistentMap.put(key, value2.serialize()).get()
+        val resAfterPut = persistentMap.get(key).get()
 
         // Assert
-        assertEquals(ValueClass(resBeforePut.get()), value1)
-        assertEquals(ValueClass(resAfterPut.get()), value2)
+        assertEquals(ValueClass(resBeforePut), value1)
+        assertEquals(ValueClass(resAfterPut), value2)
     }
 
     @Test
@@ -133,7 +133,7 @@ class PersistentMapTest {
         val value = ValueClass("someValue")
 
         // Act
-        persistentMap.put(key, value.serialize())
+        persistentMap.put(key, value.serialize()).get()
         val res = persistentMap.exists(key)
 
         // Assert
@@ -158,7 +158,7 @@ class PersistentMapTest {
         val map: Map<String, ValueClass> = (1..1000).associate { it.toString() to ValueClass("", v3 = listOf(it)) }.toMap()
 
         // Act
-        map.forEach { entry -> persistentMap.put(entry.key, entry.value.serialize()) }
+        map.forEach { entry -> persistentMap.put(entry.key, entry.value.serialize()).get() }
         val res = persistentMap.getAllMap().get()
 
         // Assert
