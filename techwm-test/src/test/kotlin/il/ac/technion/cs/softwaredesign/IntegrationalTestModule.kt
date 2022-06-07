@@ -10,6 +10,8 @@ import il.ac.technion.cs.softwaredesign.impl.DefaultUserManager
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
 import impl.DefaultPersistentMap
 
+
+
 class IntegrationalTestModule: KotlinModule() {
 
     override fun configure() {
@@ -19,7 +21,7 @@ class IntegrationalTestModule: KotlinModule() {
         bind<BookManager>().to<DefaultBookManager>()
         bind<TokenStore>().to<DefaultTokenStore>()
         bind<PersistentMap>().to<DefaultPersistentMap>()
-
         bind<SecureStorage>().to<SecureStorageFake>()
+
     }
 }

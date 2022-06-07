@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.concurrent.CompletableFuture
 
 
 class SifriTaubTest {
@@ -41,9 +42,9 @@ class SifriTaubTest {
     @Test
     fun `authenticate Success`() {
         every { userManagerMock.isUsernameAndPassMatch(any(), any()) } answers { true }
-        every { userManagerMock.generateUserTokenAndInvalidateOld(any()) } answers { "ohhh lovely token" }
+        every { userManagerMock.generateUserTokenAndInvalidateOld(any()) } answers { CompletableFuture.completedFuture("ohhh lovely token") }
 
-        val result = sifriTaub.authenticate("eilon", "xyz")
+        val result = sifriTaub.authenticate("eilon", "xyz").get()
 
         assertEquals(result,"ohhh lovely token")
     }
@@ -52,7 +53,7 @@ class SifriTaubTest {
     fun `register Fail`() {
         every { userManagerMock.isUsernameExists(any()) } answers { true }
 
-        assertThrows<IllegalArgumentException> { sifriTaub.register("eilon", "xyz", true, 26) }
+        assertThrows<IllegalArgumentException> { sifriTaub.register("eilon", "xyz", true, 26).get() }
     }
 
     @Test
@@ -76,7 +77,7 @@ class SifriTaubTest {
         every { userManagerMock.isValidToken(any()) } answers { true }
         every { userManagerMock.isUsernameExists(any()) } answers { false }
 
-        val result =  sifriTaub.userInformation("Bella Hadid", "Bisli")
+        val result =  sifriTaub.userInformation("Bella Hadid", "Bisli").get()
 
         assertEquals(result, null)
     }
@@ -85,9 +86,9 @@ class SifriTaubTest {
     fun `user Information Success`() {
         every { userManagerMock.isValidToken(any()) } answers { true }
         every { userManagerMock.isUsernameExists(any()) } answers { true }
-        every { userManagerMock.getUserInformation(any()) } answers { User("Shahak", false, 27) }
+        every { userManagerMock.getUserInformation(any()) } answers { CompletableFuture.completedFuture(User("Shahak", false, 27)) }
 
-        val user = sifriTaub.userInformation("any", "anyyy")
+        val user = sifriTaub.userInformation("any", "anyyy").get()
 
         assertEquals(user, User("Shahak", false, 27))
     }
@@ -97,7 +98,7 @@ class SifriTaubTest {
         every { userManagerMock.isValidToken(any()) } answers { false }
 
         assertThrows<PermissionException> {
-            sifriTaub.addBookToCatalog("tiki token", "harry potter2", "magic", 17)
+            sifriTaub.addBookToCatalog("tiki token", "harry potter2", "magic", 17).get()
         }
     }
 
@@ -107,7 +108,7 @@ class SifriTaubTest {
         every { bookManagerMock.isIdExists(any()) } answers { true }
 
         assertThrows<IllegalArgumentException> {
-            sifriTaub.addBookToCatalog("riki token", "harry potter3", "magic and drugs", 2)
+            sifriTaub.addBookToCatalog("riki token", "harry potter3", "magic and drugs", 2).get()
         }
     }
 
@@ -125,7 +126,7 @@ class SifriTaubTest {
     fun `get Book Description Fail Token not valid`() {
         every { userManagerMock.isValidToken(any()) } answers { false }
 
-        assertThrows<PermissionException> { sifriTaub.getBookDescription("tiki tiki", "gary") }
+        assertThrows<PermissionException> { sifriTaub.getBookDescription("tiki tiki", "gary").get() }
     }
 
     @Test
@@ -133,16 +134,16 @@ class SifriTaubTest {
         every { userManagerMock.isValidToken(any()) } answers { true }
         every { bookManagerMock.isIdExists(any()) } answers { false }
 
-        assertThrows<IllegalArgumentException> { sifriTaub.getBookDescription("tiki tiki", "gary") }
+        assertThrows<IllegalArgumentException> { sifriTaub.getBookDescription("tiki tiki", "gary").get() }
     }
 
     @Test
     fun `get Book Description`() {
         every { userManagerMock.isValidToken(any()) } answers { true }
         every { bookManagerMock.isIdExists(any()) } answers { true }
-        every { bookManagerMock.getBookDescription(any()) } answers { "vey interesting, yes yes, very very" }
+        every { bookManagerMock.getBookDescription(any()) } answers { CompletableFuture.completedFuture("vey interesting, yes yes, very very") }
 
-        val  result = sifriTaub.getBookDescription("tokin shmoken", "my_book")
+        val  result = sifriTaub.getBookDescription("tokin shmoken", "my_book").get()
 
         assertEquals(result, "vey interesting, yes yes, very very")
     }
@@ -151,15 +152,15 @@ class SifriTaubTest {
     fun `list Book Ids Fail invalid token`() {
         every { userManagerMock.isValidToken(any()) } answers { false }
 
-        assertThrows<PermissionException> { sifriTaub.listBookIds("tokeNNN!", 5) }
+        assertThrows<PermissionException> { sifriTaub.listBookIds("tokeNNN!", 5).get() }
     }
 
     @Test
     fun `list Book Ids Success`() {
         every { userManagerMock.isValidToken(any()) } answers { true }
-        every { bookManagerMock.getFirstBooksByAddTime(any()) } answers { listOf("d1", "d2", "d3") }
+        every { bookManagerMock.getFirstBooksByAddTime(any()) } answers { CompletableFuture.completedFuture(listOf("d1", "d2", "d3")) }
 
-        val result = sifriTaub.listBookIds("tokeNNN!", 5)
+        val result = sifriTaub.listBookIds("tokeNNN!", 5).get()
 
         assertEquals(result, listOf("d1", "d2", "d3"))
         verify (exactly = 1) { bookManagerMock.getFirstBooksByAddTime(5) }

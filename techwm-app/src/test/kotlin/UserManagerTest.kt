@@ -24,13 +24,13 @@ class UserManagerTest {
     @Test
     fun `is User name Exists`() {
         assert(!manager.isUsernameExists("eilon"))
-        manager.register("eilon", "123", true, 26)
+        manager.register("eilon", "123", true, 26).get()
         assert(manager.isUsernameExists("eilon"))
     }
 
     @Test
     fun `is User name And Pass Match`() {
-        manager.register("yaniv", "123", true, 18)
+        manager.register("yaniv", "123", true, 18).get()
         assert(manager.isUsernameAndPassMatch("yaniv", "123"))
         assertFalse(manager.isUsernameAndPassMatch("yaniv", "456"))
     }
@@ -38,20 +38,20 @@ class UserManagerTest {
     @Test
     fun `is Valid Token`() {
         manager.register("omer", "xyz", true, 27)
-        val firstToken = manager.generateUserTokenAndInvalidateOld("omer")
+        val firstToken = manager.generateUserTokenAndInvalidateOld("omer").get()
         assert(manager.isValidToken(firstToken))
-        val secondToken = manager.generateUserTokenAndInvalidateOld("omer")
+        val secondToken = manager.generateUserTokenAndInvalidateOld("omer").get()
         assert(manager.isValidToken(secondToken))
         assertFalse(manager.isValidToken(firstToken))
     }
 
     @Test
     fun `get User Information`() {
-        manager.register("ofir", "jjj", false, 56)
+        manager.register("ofir", "jjj", false, 56).get()
 
-        val ofir = manager.getUserInformation("ofir")
+        val ofir = manager.getUserInformation("ofir").get()
 
-        assertFalse(ofir.isFromCS)
+        assertFalse(ofir!!.isFromCS)
         assertEquals(ofir.age, 56)
         assertEquals(ofir.username, "ofir")
     }

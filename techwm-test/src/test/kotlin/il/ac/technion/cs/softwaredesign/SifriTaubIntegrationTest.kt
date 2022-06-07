@@ -34,12 +34,12 @@ class SifriTaubIntegrationTest {
         assertThrows<IllegalArgumentException> { sifri.authenticate("doron", "x") }
         assertThrows<IllegalArgumentException> { sifri.authenticate("yaniv", "bad_pwd") }
 
-        assertEquals(sifri.userInformation(omer_token3, "shahak"), null)
-        assertDoesNotThrow { sifri.userInformation(omer_token3, "yaniv") }
+        assertEquals(sifri.userInformation(omer_token3, "shahak").get(), null)
+        assertDoesNotThrow { sifri.userInformation(omer_token3, "yaniv").get() }
 
-        assertThrows<PermissionException> { sifri.userInformation(omer_token2, "yaniv") }
-        assertThrows<PermissionException> { sifri.userInformation(omer_token1, "omer") }
-        assertThrows<PermissionException> { sifri.userInformation(yaniv_token1, "ofir") }
+        assertThrows<PermissionException> { sifri.userInformation(omer_token2, "yaniv").get() }
+        assertThrows<PermissionException> { sifri.userInformation(omer_token1, "omer").get() }
+        assertThrows<PermissionException> { sifri.userInformation(yaniv_token1, "ofir").get() }
     }
 
     @Test
