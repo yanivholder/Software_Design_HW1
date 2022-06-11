@@ -39,7 +39,8 @@ class SifriTaubIntegrationTest {
 
         assertThrows<PermissionException> { sifri.userInformation(omer_token2, "yaniv").get() }
         assertThrows<PermissionException> { sifri.userInformation(omer_token1, "omer").get() }
-        assertThrows<PermissionException> { sifri.userInformation(yaniv_token1, "ofir").get() }
+        assertThrows<PermissionException> { sifri.userInformation(yaniv_token1, "ofir").get()
+        }
     }
 
     @Test

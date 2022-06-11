@@ -26,11 +26,12 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @return An authentication token to be used in future calls.
      */
     fun authenticate(username: String, password: String): CompletableFuture<String> {
-         val match = userManager.isUsernameAndPassMatch(username = username, password = password)
-         if (!match) {
-             throw IllegalArgumentException()
+         return userManager.isUsernameAndPassMatch(username = username, password = password).thenCompose { match ->
+             if (!match) {
+                 throw IllegalArgumentException()
+             }
+             userManager.generateUserTokenAndInvalidateOld(username = username)
          }
-         return userManager.generateUserTokenAndInvalidateOld(username = username)
     }
 
     /**
@@ -38,9 +39,14 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * If the token is valid, do nothing.
      * If not - throws PermissionException
      */
-    private fun checkToken(token: String): Unit{
-        if (!userManager.isValidToken(token = token)) {
+    private fun checkToken(token: String): CompletableFuture<Unit>{
+        return userManager.isValidToken(token = token).thenCompose { isValid ->
+            if(!isValid) {
                 throw PermissionException()
+            }
+            else{
+                CompletableFuture.completedFuture(Unit)
+            }
         }
     }
 
@@ -57,16 +63,23 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If a user with the same [username] already exists or the [age] is negative.
      */
     fun register(username: String, password: String, isFromCS: Boolean, age: Int): CompletableFuture<Unit> {
-        if(age < 0 || userManager.isUsernameExists(username = username)){
+        if(age < 0){
             throw IllegalArgumentException()
         }
 
-        return userManager.register(
-            username = username,
-            password = password,
-            isFromCS = isFromCS,
-            age = age
-        )
+        return userManager.isUsernameExists(username = username).thenCompose { exists ->
+            if (exists) {
+                throw IllegalArgumentException()
+            }
+            else {
+                userManager.register(
+                    username = username,
+                    password = password,
+                    isFromCS = isFromCS,
+                    age = age
+                )
+            }
+        }
     }
 
     /**
@@ -83,12 +96,16 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * return `null`, indicating that there is no such user
      */
     fun userInformation(token: String, username: String): CompletableFuture<User?> {
-        checkToken(token)
-
-        if(!userManager.isUsernameExists(username = username))
-            return CompletableFuture.completedFuture(null)
-
-        return userManager.getUserInformation(username = username)
+        return checkToken(token).thenCompose {
+            userManager.isUsernameExists(username = username).thenCompose{ exists ->
+                if (!exists){
+                    CompletableFuture.completedFuture(null)
+                }
+                else{
+                    userManager.getUserInformation(username = username)
+                }
+            }
+        }
     }
 
     /**
@@ -105,12 +122,15 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If a book with the same [id] already exists.
      */
     fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): CompletableFuture<Unit> {
-        checkToken(token)
 
-        if (bookManager.isIdExists(id = id)){
-                throw IllegalArgumentException()
+        return checkToken(token).thenCompose {
+            bookManager.isIdExists(id = id).thenCompose{ exists ->
+                if (exists){
+                    throw IllegalArgumentException()
+                }
+                bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
+            }
         }
-        return bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
     }
 
     /**
@@ -125,12 +145,15 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @return A description string of the book with [id]
      */
     fun getBookDescription(token: String, id: String): CompletableFuture<String> {
-        checkToken(token)
 
-        if (!bookManager.isIdExists(id = id)){
-                throw IllegalArgumentException()
+        return checkToken(token).thenCompose {
+            bookManager.isIdExists(id = id).thenCompose{ exists ->
+                if (!exists){
+                    throw IllegalArgumentException()
+                }
+                bookManager.getBookDescription(id = id)
+            }
         }
-        return bookManager.getBookDescription(id = id)
     }
 
     /**
@@ -145,9 +168,9 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * If there are less than [n] ids of books, this method returns a list of all book ids (sorted as defined above).
      */
     fun listBookIds(token: String, n: Int = 10): CompletableFuture<List<String>> {
-        checkToken(token)
-
-        return bookManager.getFirstBooksByAddTime(numOfBooks = n)
+        return checkToken(token).thenCompose {
+            bookManager.getFirstBooksByAddTime(numOfBooks = n)
+        }
     }
 
     /**

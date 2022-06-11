@@ -20,9 +20,9 @@ class BookManagerTest {
 
     @Test
     fun `is Id Exists`() {
-        assertFalse(manager.isIdExists("harry potter3"))
+        assertFalse(manager.isIdExists("harry potter3").get())
         manager.addBook("harry potter3", "it's about magic", 3).get()
-        assert(manager.isIdExists("harry potter3"))
+        assert(manager.isIdExists("harry potter3").get())
     }
 
 

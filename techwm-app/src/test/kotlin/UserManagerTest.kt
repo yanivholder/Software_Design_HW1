@@ -23,26 +23,26 @@ class UserManagerTest {
 
     @Test
     fun `is User name Exists`() {
-        assert(!manager.isUsernameExists("eilon"))
+        assert(!manager.isUsernameExists("eilon").get())
         manager.register("eilon", "123", true, 26).get()
-        assert(manager.isUsernameExists("eilon"))
+        assert(manager.isUsernameExists("eilon").get())
     }
 
     @Test
     fun `is User name And Pass Match`() {
         manager.register("yaniv", "123", true, 18).get()
-        assert(manager.isUsernameAndPassMatch("yaniv", "123"))
-        assertFalse(manager.isUsernameAndPassMatch("yaniv", "456"))
+        assert(manager.isUsernameAndPassMatch("yaniv", "123").get())
+        assertFalse(manager.isUsernameAndPassMatch("yaniv", "456").get())
     }
 
     @Test
     fun `is Valid Token`() {
         manager.register("omer", "xyz", true, 27)
         val firstToken = manager.generateUserTokenAndInvalidateOld("omer").get()
-        assert(manager.isValidToken(firstToken))
+        assert(manager.isValidToken(firstToken).get())
         val secondToken = manager.generateUserTokenAndInvalidateOld("omer").get()
-        assert(manager.isValidToken(secondToken))
-        assertFalse(manager.isValidToken(firstToken))
+        assert(manager.isValidToken(secondToken).get())
+        assertFalse(manager.isValidToken(firstToken).get())
     }
 
     @Test

@@ -16,21 +16,23 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
 
     private val md = MessageDigest.getInstance("SHA-1")
 
-    override fun isUsernameExists(username: String): Boolean {
+    override fun isUsernameExists(username: String): CompletableFuture<Boolean> {
         return persistentMap.exists(username)
     }
 
-    override fun isUsernameAndPassMatch(username: String, password: String): Boolean {
-        val usr = persistentMap.get(username).get()
-        if (usr == null){
-            return false
-        }else{
-            /* The UserInfo(usr) wrapper is for deserializing */
-            return (UserInfo(usr).password == password)
+    override fun isUsernameAndPassMatch(username: String, password: String): CompletableFuture<Boolean> {
+        return persistentMap.get(username).thenCompose { rawUser ->
+            if (rawUser == null) {
+                completedFuture(false)
+            }
+            else {
+                /* The UserInfo(usr) wrapper is for deserializing */
+                completedFuture(UserInfo(rawUser).password == password)
+            }
         }
     }
 
-    override fun isValidToken(token: String): Boolean {
+    override fun isValidToken(token: String): CompletableFuture<Boolean> {
         return tokenStore.isValid(token)
     }
 
@@ -39,34 +41,32 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         return md.digest(TokenSeed.toByteArray()).toList().toString()
     }
 
+    /**
+     * @note This function assumes that the user does exist
+     * and it's behaviour is undefined if called for non-existing user
+     */
     override fun generateUserTokenAndInvalidateOld(username: String): CompletableFuture<String> {
-        val future: CompletableFuture<String> = CompletableFuture()
 
-        thread(start = true) {
-            val user: UserInfo = UserInfo(persistentMap.get(username).get()!!)
+        return persistentMap.get(username).thenCompose { serializedUser ->
+            val user = UserInfo(serializedUser!!)
             val numberForTokenGeneation = user.getNumTokensGenerated()
-
-            var tokenInvalidationFuture: CompletableFuture<Unit> = completedFuture(Unit)
-
-            if (numberForTokenGeneation != 0){
-
-                val oldToken = calculateToken(username, numberForTokenGeneation-1)
-                tokenInvalidationFuture = tokenStore.invalidate(oldToken)
-            }
+            user.incNumTokensGenerated()
 
             val newToken = calculateToken(username, numberForTokenGeneation)
-
-            user.incNumTokensGenerated()
 
             val tokenInsertFuture = tokenStore.insert(newToken)
             val userUpdateFuture = persistentMap.put(username, user.serialize())
 
-            CompletableFuture.allOf(tokenInvalidationFuture, tokenInsertFuture, userUpdateFuture).get()
+            var tokenInvalidationFuture: CompletableFuture<Unit> = completedFuture(Unit)
+            if (numberForTokenGeneation != 0){
+                val oldToken = calculateToken(username, numberForTokenGeneation-1)
+                tokenInvalidationFuture = tokenStore.invalidate(oldToken)
+            }
 
-            future.complete(newToken)
+            CompletableFuture.allOf(tokenInvalidationFuture, tokenInsertFuture, userUpdateFuture).thenCompose{
+                completedFuture(newToken)
+            }
         }
-
-        return future
     }
 
     override fun register(username: String, password: String, isFromCS: Boolean, age: Int): CompletableFuture<Unit> {
@@ -79,16 +79,10 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
      * and it's behaviour is undefined if called for non-existing user
      */
     override fun getUserInformation(username: String): CompletableFuture<User?> {
-        assert(isUsernameExists(username))
 
-        val future: CompletableFuture<User?> = CompletableFuture()
-
-        thread(start = true) {
-            val usrInfo = UserInfo(persistentMap.get(username).get()!!)
-            future.complete(User(username, usrInfo.user.isFromCS, usrInfo.user.age))
+        return persistentMap.get(username).thenCompose { serializedUser ->
+            val usrInfo = UserInfo(serializedUser!!)
+            completedFuture(User(username, usrInfo.user.isFromCS, usrInfo.user.age))
         }
-
-        return future
-
     }
 }

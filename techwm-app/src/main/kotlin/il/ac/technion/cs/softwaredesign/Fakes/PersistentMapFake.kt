@@ -14,8 +14,8 @@ class PersistentMapFake : PersistentMap {
     override fun get(key: String): CompletableFuture<ByteArray?> {
         return CompletableFuture.completedFuture(map[key])
     }
-    override fun exists(key: String): Boolean {
-        return map.contains(key)
+    override fun exists(key: String): CompletableFuture<Boolean> {
+        return CompletableFuture.completedFuture(map.contains(key))
     }
 
     override fun getAllMap(): CompletableFuture<Map<String, ByteArray?>> {

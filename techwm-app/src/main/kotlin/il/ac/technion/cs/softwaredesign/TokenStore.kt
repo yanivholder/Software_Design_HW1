@@ -10,5 +10,5 @@ interface TokenStore {
     // return true if and only if insert occurred successfully
     fun insert(newToken: String): CompletableFuture<Unit>
 
-    fun isValid(token: String): Boolean
+    fun isValid(token: String): CompletableFuture<Boolean>
 }

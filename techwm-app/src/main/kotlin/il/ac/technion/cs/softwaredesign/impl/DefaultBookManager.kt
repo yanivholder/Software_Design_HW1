@@ -9,7 +9,7 @@ import kotlin.concurrent.thread
 
 class DefaultBookManager @Inject constructor(private val persistentMap: PersistentMap) : BookManager {
 
-    override fun isIdExists(id: String): Boolean {
+    override fun isIdExists(id: String): CompletableFuture<Boolean> {
         return persistentMap.exists(id)
     }
 
@@ -23,27 +23,20 @@ class DefaultBookManager @Inject constructor(private val persistentMap: Persiste
      * and it's behaviour is undefined if called for non-existing book
      */
     override fun getBookDescription(id: String): CompletableFuture<String> {
-        assert(isIdExists(id))
 
-        val bookDesc: CompletableFuture<String> = persistentMap.get(id)
-            .thenApply { serilizedBookInfo ->
-                BookInfo(serilizedBookInfo!!).description
+        return persistentMap.get(id).thenApply { serializedBookInfo ->
+                BookInfo(serializedBookInfo!!).description
         }
-        return bookDesc
     }
 
     override fun getFirstBooksByAddTime(numOfBooks: Int): CompletableFuture<List<String>> {
-        val future: CompletableFuture<List<String>> = CompletableFuture()
 
-        thread(start = true) {
-            val mapAsList = persistentMap.getAllMap().get().map { Pair(it.key, BookInfo(it.value!!)) }.toList()
+        return persistentMap.getAllMap().thenApply { booksMap ->
+            val mapAsList = booksMap.map { Pair(it.key, BookInfo(it.value!!)) }.toList()
             val firstBooksByAddTime = mapAsList.sortedBy { it.second.timeOfLising }.take(numOfBooks)
-            val res = firstBooksByAddTime.map { it.first /* The id's of the books only */ }.toList()
 
-            future.complete(res)
+            firstBooksByAddTime.map { it.first /* The id's of the books only */ }.toList()
         }
-
-        return future
     }
 }
 
