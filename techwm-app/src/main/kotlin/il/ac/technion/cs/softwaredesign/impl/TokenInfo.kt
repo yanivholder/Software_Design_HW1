@@ -10,19 +10,21 @@ import java.io.ObjectInputStream
  * @property tokenValidity Whether this token is valid or not
 
  */
-data class TokenInfo(private var tokenValidity: Boolean = false) : ByteSerializable {
+data class TokenInfo(private var tokenValidity: Boolean = false, private var ownerId: String = "N.A") : ByteSerializable {
 
     constructor(byteArray: ByteArray): this() {
-        // TODO - remove
-//        val bais = ByteArrayInputStream(byteArray)
-//        val ois = ObjectInputStream(bais)
-//        val obj = ois.readObject() as TokenInfo
+
         val obj = deserialize(byteArray) as TokenInfo
         this.tokenValidity = obj.getValidity()
+        this.ownerId = obj.getOwner()
     }
 
     fun getValidity(): Boolean{
         return tokenValidity
+    }
+
+    fun getOwner(): String{
+        return ownerId
     }
 
 }

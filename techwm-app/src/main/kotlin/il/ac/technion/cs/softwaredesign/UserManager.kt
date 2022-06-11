@@ -25,4 +25,6 @@ interface UserManager {
      * and it's behaviour is undefined if called for non-existing user
      */
     fun getUserInformation(username: String): CompletableFuture<User?>
+
+    fun getUserNameByToken(token: String): CompletableFuture<String>
 }

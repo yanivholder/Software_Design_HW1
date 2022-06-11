@@ -5,10 +5,12 @@ import java.util.concurrent.CompletableFuture
 interface TokenStore {
 
     // return true if and only if invalidation occurred successfully
-    fun invalidate(oldToken: String): CompletableFuture<Unit>
+    fun invalidate(oldToken: String, ownerId: String): CompletableFuture<Unit>
 
     // return true if and only if insert occurred successfully
-    fun insert(newToken: String): CompletableFuture<Unit>
+    fun insert(newToken: String, ownerId: String): CompletableFuture<Unit>
 
     fun isValid(token: String): CompletableFuture<Boolean>
+
+    fun getTokenOwner(token: String): CompletableFuture<String>
 }

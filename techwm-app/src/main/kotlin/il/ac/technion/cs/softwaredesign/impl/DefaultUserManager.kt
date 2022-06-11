@@ -36,8 +36,12 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
         return tokenStore.isValid(token)
     }
 
+    /**
+     * We hash twice to avoid collisions between keys and numbers like "my_str"+"12" and "my_str1"+"2"
+     */
     private fun calculateToken(str: String, num: Int): String{
-        val TokenSeed = str + (num).toString()
+        val hasedKey = md.digest(str.toByteArray()).toList().toString()
+        val TokenSeed = hasedKey + (num).toString()
         return md.digest(TokenSeed.toByteArray()).toList().toString()
     }
 
@@ -54,13 +58,13 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
 
             val newToken = calculateToken(username, numberForTokenGeneation)
 
-            val tokenInsertFuture = tokenStore.insert(newToken)
+            val tokenInsertFuture = tokenStore.insert(newToken, username)
             val userUpdateFuture = persistentMap.put(username, user.serialize())
 
             var tokenInvalidationFuture: CompletableFuture<Unit> = completedFuture(Unit)
             if (numberForTokenGeneation != 0){
                 val oldToken = calculateToken(username, numberForTokenGeneation-1)
-                tokenInvalidationFuture = tokenStore.invalidate(oldToken)
+                tokenInvalidationFuture = tokenStore.invalidate(oldToken, username)
             }
 
             CompletableFuture.allOf(tokenInvalidationFuture, tokenInsertFuture, userUpdateFuture).thenCompose{
@@ -84,5 +88,9 @@ class DefaultUserManager @Inject constructor(private val persistentMap: Persiste
             val usrInfo = UserInfo(serializedUser!!)
             completedFuture(User(username, usrInfo.user.isFromCS, usrInfo.user.age))
         }
+    }
+
+    override fun getUserNameByToken(token: String): CompletableFuture<String> {
+        return tokenStore.getTokenOwner(token)
     }
 }

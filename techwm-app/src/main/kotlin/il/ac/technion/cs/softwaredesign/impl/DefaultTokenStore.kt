@@ -8,21 +8,26 @@ import javax.inject.Inject
 class DefaultTokenStore @Inject constructor(private val persistentMap: PersistentMap) : TokenStore{
 
     // return true if and only if invalidation occurred successfully
-    override fun invalidate(oldToken: String): CompletableFuture<Unit> {
-        return persistentMap.put(oldToken, TokenInfo(false).serialize())
+    override fun invalidate(oldToken: String, ownerId: String): CompletableFuture<Unit> {
+        return persistentMap.put(oldToken, TokenInfo(false, ownerId).serialize())
     }
 
     // return true if and only if insert occurred successfully
-    override fun insert(newToken: String): CompletableFuture<Unit>{
-        return persistentMap.put(newToken, TokenInfo(true).serialize())
+    override fun insert(newToken: String, ownerId: String): CompletableFuture<Unit> {
+        return persistentMap.put(newToken, TokenInfo(true, ownerId).serialize())
     }
 
-    override fun isValid(token: String): CompletableFuture<Boolean>{
+    override fun isValid(token: String): CompletableFuture<Boolean> {
         return persistentMap.get(token).thenCompose { serializedToken ->
             CompletableFuture.completedFuture((serializedToken != null) && TokenInfo(serializedToken).getValidity())
         }
-//        val ret = persistentMap.get(token).get()
-//        return (ret != null) && TokenInfo(ret).getValidity()
     }
+
+    override fun getTokenOwner(token: String): CompletableFuture<String> {
+        return persistentMap.get(token).thenApply { serializedToken ->
+            TokenInfo(serializedToken!!).getOwner()
+        }
+    }
+
 
 }

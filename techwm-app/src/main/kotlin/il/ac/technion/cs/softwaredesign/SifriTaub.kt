@@ -10,7 +10,7 @@ import javax.inject.Inject
  * + Managing users
  * + Queueing book loans
  */
-class SifriTaub @Inject constructor(private val userManager: UserManager, private val bookManager: BookManager) {
+class SifriTaub @Inject constructor(private val userManager: UserManager, private val bookManager: BookManager, private val loanManager: LoanManager) {
 
      /**
      * Authenticate a user identified by [username] and [password].
@@ -196,7 +196,21 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * - Even when a loan is not yet obtained, it should still show up in the system, so that [loanRequestInformation] calls
      * succeed and view this loan request as queued.
      */
-    fun submitLoanRequest(token: String, loanName: String, bookIds: List<String>): CompletableFuture<String> = TODO("Implement me!")
+    fun submitLoanRequest(token: String, loanName: String, bookIds: List<String>): CompletableFuture<String> {
+        return checkToken(token).thenCompose {
+            for (bookId in bookIds){
+                bookManager.isIdExists(bookId).thenApply { exists ->
+                    if (!exists){
+                        throw IllegalArgumentException()
+                    }
+                }
+            }
+            userManager.getUserNameByToken(token).thenCompose{ owner ->
+                val newLoanId = loanManager.createNewLoan(loanName, owner, bookIds)
+                CompletableFuture.completedFuture(newLoanId)
+            }
+        }
+    }
 
     /**
      * Return information about a specific loan in the system. [id] is the loan id.
@@ -206,7 +220,14 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws PermissionException If the [token] is invalid.
      * @throws IllegalArgumentException If a loan with the supplied [id] does not exist in the system.
      */
-    fun loanRequestInformation(token: String, id: String): CompletableFuture<LoanRequestInformation> = TODO("Implement me!")
+    fun loanRequestInformation(token: String, id: String): CompletableFuture<LoanRequestInformation> {
+        return checkToken(token).thenCompose {
+            if (!loanManager.loanExists(id)){
+                throw IllegalArgumentException()
+            }
+            CompletableFuture.completedFuture(loanManager.getLoanInfo(id))
+        }
+    }
 
     /**
      * Cancel currently queued loan.
@@ -220,7 +241,17 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If the loan associated with [loanId] does not belong to the calling user,
      * does not exist, or it is not currently in a [LoanStatus.QUEUED] state.
      */
-    fun cancelLoanRequest(token: String, loanId: String): CompletableFuture<Unit> = TODO("Implement me!")
+    fun cancelLoanRequest(token: String, loanId: String): CompletableFuture<Unit> {
+        return checkToken(token).thenCompose {
+            userManager.getUserNameByToken(token).thenCompose{ tokenOwner ->
+                if (loanManager.getLoanInfo(loanId).ownerUserId != tokenOwner){
+                    throw java.lang.IllegalArgumentException()
+                }
+                loanManager.cancelLoan(loanId)
+                CompletableFuture.completedFuture(Unit)
+            }
+        }
+    }
 
     /**
      * @return a future that is finished only when the loan is obtained (according to the docs in [submitLoanRequest]).
