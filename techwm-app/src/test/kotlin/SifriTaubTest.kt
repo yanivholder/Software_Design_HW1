@@ -18,13 +18,16 @@ class SifriTaubTest {
 
     private var userManagerMock: UserManager = mockk(relaxed = true)
     private var bookManagerMock: BookManager = mockk(relaxed = true)
-    private var sifriTaub = SifriTaub(userManagerMock, bookManagerMock)
+    private var loanManagerMock: LoanManager = mockk(relaxed = true)
+    private var sifriTaub = SifriTaub(userManagerMock, bookManagerMock, loanManagerMock)
 
     @BeforeEach
     fun init(){
         userManagerMock = mockk(relaxed = true)
         bookManagerMock = mockk(relaxed = true)
-        sifriTaub = SifriTaub(userManagerMock, bookManagerMock)
+        loanManagerMock = mockk(relaxed = true)
+
+        sifriTaub = SifriTaub(userManagerMock, bookManagerMock, loanManagerMock)
     }
 
     @Test
@@ -183,6 +186,11 @@ class SifriTaubTest {
 
         assertEquals(result, listOf("d1", "d2", "d3"))
         verify (exactly = 1) { bookManagerMock.getFirstBooksByAddTime(5) }
+    }
+
+    @Test
+    fun `need to implemnt loaning tests`() {
+        assert(false)
     }
 
 }

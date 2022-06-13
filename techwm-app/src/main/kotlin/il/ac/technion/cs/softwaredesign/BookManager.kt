@@ -14,5 +14,11 @@ interface BookManager {
      */
     fun getBookDescription(id: String): CompletableFuture<String>
 
+    /**
+     * @note This function assumes that the book with this id does exist
+     * and it's behaviour is undefined if called for non-existing book
+     */
+    fun getBookCopiesAmount(id: String): CompletableFuture<Int>
+
     fun getFirstBooksByAddTime(numOfBooks: Int): CompletableFuture<List<String>>
 }

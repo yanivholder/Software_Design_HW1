@@ -3,9 +3,7 @@ package il.ac.technion.cs.softwaredesign.impl
 import il.ac.technion.cs.softwaredesign.BookManager
 import PersistentMap
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
 import javax.inject.Inject
-import kotlin.concurrent.thread
 
 class DefaultBookManager @Inject constructor(private val persistentMap: PersistentMap) : BookManager {
 
@@ -26,6 +24,17 @@ class DefaultBookManager @Inject constructor(private val persistentMap: Persiste
 
         return persistentMap.get(id).thenApply { serializedBookInfo ->
                 BookInfo(serializedBookInfo!!).description
+        }
+    }
+
+    /**
+     * @note This function assumes that the book with this id does exist
+     * and it's behaviour is undefined if called for non-existing book
+     */
+    override fun getBookCopiesAmount(id: String): CompletableFuture<Int> {
+
+        return persistentMap.get(id).thenApply { serializedBookInfo ->
+            BookInfo(serializedBookInfo!!).copiesAmount
         }
     }
 

@@ -125,9 +125,11 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
 
         return checkToken(token).thenCompose {
             bookManager.isIdExists(id = id).thenCompose{ exists ->
-                if (exists){
+                if (exists || copiesAmount <= 0){
                     throw IllegalArgumentException()
                 }
+                // TODO - think if i can remove this and merge loan/book Mgrs
+                loanManager.addBook(id = id, copiesAmount = copiesAmount)
                 bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
             }
         }
@@ -225,7 +227,9 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
             if (!loanManager.loanExists(id)){
                 throw IllegalArgumentException()
             }
-            CompletableFuture.completedFuture(loanManager.getLoanInfo(id))
+            val loanInfo = loanManager.getLoanInfo(id)
+
+            CompletableFuture.completedFuture(loanInfo)
         }
     }
 
@@ -244,9 +248,11 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun cancelLoanRequest(token: String, loanId: String): CompletableFuture<Unit> {
         return checkToken(token).thenCompose {
             userManager.getUserNameByToken(token).thenCompose{ tokenOwner ->
-                if (loanManager.getLoanInfo(loanId).ownerUserId != tokenOwner){
-                    throw java.lang.IllegalArgumentException()
+                val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
+                if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner) || (loanInfo.loanStatus != LoanStatus.QUEUED)){
+                    throw IllegalArgumentException()
                 }
+                // TODO - maybe `cancelLoan` will return a CompletableFuture<Unit> that waits on the return of all books
                 loanManager.cancelLoan(loanId)
                 CompletableFuture.completedFuture(Unit)
             }
@@ -260,5 +266,34 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      * @throws IllegalArgumentException If the loan associated with [loanId] does not belong to the calling user
      * or does not exist.
      */
-    fun waitForBooks(token: String, loanId: String): CompletableFuture<ObtainedLoan> = TODO("Implement me!")
+    fun waitForBooks(token: String, loanId: String): CompletableFuture<ObtainedLoan> {
+        return checkToken(token).thenCompose {
+            userManager.getUserNameByToken(token).thenCompose{ tokenOwner ->
+                val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
+                if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner)){
+                    throw IllegalArgumentException()
+                }
+                loanManager.waitForLoan(loanId)
+            }
+        }
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
