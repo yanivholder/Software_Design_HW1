@@ -189,7 +189,7 @@ class SifriTaubTest {
     }
 
     @Test
-    fun `need to implemnt loaning tests`() {
+    fun `need to implement loaning tests`() {
         assert(false)
     }
 

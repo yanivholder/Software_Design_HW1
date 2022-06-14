@@ -112,11 +112,12 @@ class DefaultLoanManager : LoanManager{
         }
     }
 
-    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> {
-        return CompletableFuture<ObtainedLoan>().thenApply {
-            DefaultObtainedLoan(loanId, this)
-        }
-    }
+//    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> {
+//        return CompletableFuture<ObtainedLoan>().thenApply {
+//            // TODO - try to get all the books, and try again each time a book is returned
+//            DefaultObtainedLoan(loanId, this)
+//        }
+//    }
 
-
+    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> = TODO()
 }

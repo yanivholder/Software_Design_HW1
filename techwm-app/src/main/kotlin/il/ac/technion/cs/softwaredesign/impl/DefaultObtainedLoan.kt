@@ -17,7 +17,7 @@ class DefaultObtainedLoan @Inject constructor(private val loanId: String, privat
      */
     override fun returnBooks(): CompletableFuture<Unit>{
         return CompletableFuture.supplyAsync {
-            defaultLoanManager.bookReturnFun(loanId)
+//            defaultLoanManager.bookReturnFun(loanId)
 //            bookReturnFunction(loanId)
         }
     }

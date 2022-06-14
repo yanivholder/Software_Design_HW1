@@ -18,7 +18,7 @@ public class LoanManagerTest {
     }
 
     @Test
-    fun `need to implemnt tests`() {
+    fun `need to implement tests`() {
         assert(false)
     }
 }
