@@ -5,9 +5,11 @@ import il.ac.technion.cs.softwaredesign.LoanManager
 import il.ac.technion.cs.softwaredesign.LoanStatus
 import il.ac.technion.cs.softwaredesign.LoanRequestInformation
 import il.ac.technion.cs.softwaredesign.ObtainedLoan
+import il.ac.technion.cs.softwaredesign.loan.LoanService
 import java.time.temporal.TemporalAmount
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import javax.inject.Inject
 import kotlin.Comparator
 import kotlin.collections.HashMap
 
@@ -18,10 +20,10 @@ data class LoanInfo(var loanId: String = "N.A", var loanReq: LoanRequestInformat
 data class BookCacheItem (val libraryTotalAmount: Int, val takenTotal: Int)
 
 
-class DefaultLoanManager : LoanManager{
+class DefaultLoanManager @Inject constructor(private val loanService: LoanService) : LoanManager{
 
     // TODO - solve this
-    private val loanService: LoanServiceFake = LoanServiceFake()
+//    private val loanService: LoanServiceFake = LoanServiceFake()
 
     private var loanIdRunner: Int = 0
     private var queue: LinkedList<LoanInfo> = LinkedList(listOf())
@@ -30,6 +32,12 @@ class DefaultLoanManager : LoanManager{
 
     override fun addBook(id: String, copiesAmount: Int){
         bookLibraryAmountCache[id] = BookCacheItem(copiesAmount, 0)
+    }
+
+    /** @note use only on a book that is known to be in the system! */
+    override fun getBookAvailableAmount(bookId: String): Int {
+        val bookCacheItem = bookLibraryAmountCache[bookId]!!
+        return bookCacheItem.libraryTotalAmount - bookCacheItem.takenTotal
     }
 
     override fun bookInfoMissing(bookId: String): Boolean{
@@ -48,6 +56,7 @@ class DefaultLoanManager : LoanManager{
         val cachedBook = bookLibraryAmountCache[bookId]
         if (cachedBook != null) {
             bookLibraryAmountCache[bookId] = BookCacheItem(cachedBook.libraryTotalAmount, cachedBook.takenTotal+1)
+            loanService.loanBook(bookId)
         }
     }
 
@@ -56,6 +65,7 @@ class DefaultLoanManager : LoanManager{
         val cachedBook = bookLibraryAmountCache[bookId]
         if (cachedBook != null) {
             bookLibraryAmountCache[bookId] = BookCacheItem(cachedBook.libraryTotalAmount, cachedBook.takenTotal-1)
+            loanService.returnBook(bookId)
         }else{
             // should never get here
             assert(false)
@@ -76,7 +86,7 @@ class DefaultLoanManager : LoanManager{
     }
 
     override fun getLoanInfo(loanId: String): LoanRequestInformation ?{
-        val loanInfo = dequeuedLoans[loanId]
+        val loanInfo = dequeuedLoans.getOrDefault(loanId, null)
         if (loanInfo != null){
             return loanInfo
         }
@@ -85,31 +95,28 @@ class DefaultLoanManager : LoanManager{
     }
 
     override fun cancelLoan(loanId: String): Unit {
-        val elem = queue.first { it.loanId == loanId }
-        queue.remove(elem)
-        val loanReq = elem.loanReq
-        dequeuedLoans[elem.loanId] = LoanRequestInformation(loanReq.loanName, loanReq.requestedBooks, loanReq.ownerUserId, LoanStatus.CANCELED)
+        val elem = queue.firstOrNull() { it.loanId == loanId }
+        if (elem != null){
+            queue.remove(elem)
+            val loanReq = elem.loanReq
+            dequeuedLoans[elem.loanId] = LoanRequestInformation(loanReq.loanName, loanReq.requestedBooks, loanReq.ownerUserId, LoanStatus.CANCELED)
+        }
     }
 
-    fun bookReturnFun(loanId: String){
+    fun bookReturnFunc(loanId: String){
         val loan = dequeuedLoans[loanId]
         if (loan != null) {
             dequeuedLoans[loanId] =
                 LoanRequestInformation(loan.loanName, loan.requestedBooks, loan.ownerUserId, LoanStatus.RETURNED)
-        }else{
-            // should never get here
-            assert(false)
-        }
-        val obtainedBooks = dequeuedLoans[loanId]?.requestedBooks
-        if (obtainedBooks != null) {
-            for(bookId in obtainedBooks){
-                loanService.returnBook(bookId)
+
+            for(bookId in loan.requestedBooks){
                 returnBook(bookId)
             }
         }else{
             // should never get here
             assert(false)
         }
+
     }
 
 //    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> {

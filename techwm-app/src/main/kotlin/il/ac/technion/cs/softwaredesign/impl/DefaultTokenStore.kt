@@ -25,7 +25,11 @@ class DefaultTokenStore @Inject constructor(private val persistentMap: Persisten
 
     override fun getTokenOwner(token: String): CompletableFuture<String> {
         return persistentMap.get(token).thenApply { serializedToken ->
-            TokenInfo(serializedToken!!).getOwner()
+            if (serializedToken != null) {
+                TokenInfo(serializedToken).getOwner()
+            }else{
+               "Non existing user"
+            }
         }
     }
 

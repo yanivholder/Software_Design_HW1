@@ -12,5 +12,6 @@ interface TokenStore {
 
     fun isValid(token: String): CompletableFuture<Boolean>
 
+    /** call only for valid tokens, behavior is undefined otherwise */
     fun getTokenOwner(token: String): CompletableFuture<String>
 }

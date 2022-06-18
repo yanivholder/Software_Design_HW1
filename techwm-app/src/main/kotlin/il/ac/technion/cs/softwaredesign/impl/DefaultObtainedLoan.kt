@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 import javax.inject.Inject
 
 //class DefaultObtainedLoan(private val loanId: String, private val bookReturnFunction: (loanId: String) -> Unit ) : ObtainedLoan {
-class DefaultObtainedLoan @Inject constructor(private val loanId: String, private val defaultLoanManager: DefaultLoanManager) : ObtainedLoan {
+class DefaultObtainedLoan (private val loanId: String, private val savedLoanManager: DefaultLoanManager) : ObtainedLoan {
 
     /**
      * Marks the loan request as [LoanStatus.RETURNED], returning all book to the library, marking them available for other loan
@@ -17,8 +17,16 @@ class DefaultObtainedLoan @Inject constructor(private val loanId: String, privat
      */
     override fun returnBooks(): CompletableFuture<Unit>{
         return CompletableFuture.supplyAsync {
-//            defaultLoanManager.bookReturnFun(loanId)
+            savedLoanManager.bookReturnFunc(loanId)
 //            bookReturnFunction(loanId)
         }
+    }
+}
+
+class DoNothingObtainedLoan : ObtainedLoan {
+
+    /** Used for the case when "waitForBooks" is called for an obtained or cancelled loan */
+    override fun returnBooks(): CompletableFuture<Unit>{
+        return CompletableFuture.completedFuture(Unit)
     }
 }

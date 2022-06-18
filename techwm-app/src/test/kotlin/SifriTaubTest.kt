@@ -189,8 +189,120 @@ class SifriTaubTest {
     }
 
     @Test
-    fun `need to implement loaning tests`() {
-        assert(false)
+    fun `submitLoanRequest fail with non existing book`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { bookManagerMock.isIdExists(any()) } answers { CompletableFuture.completedFuture(false) }
+
+        val listBookIds: List<String> = listOf("id1", "id2")
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.submitLoanRequest("toki_toki", "my_loan", listBookIds).join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
     }
+
+    @Test
+    fun `submitLoanRequest success`(){
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { bookManagerMock.isIdExists(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon") }
+
+        sifriTaub.submitLoanRequest("toki toki", "my_loan", listOf("id1", "id2")).join()
+
+        verify (exactly = 1) { loanManagerMock.createNewLoan("my_loan", "eilon", listOf("id1", "id2")) }
+    }
+
+    @Test
+    fun `loanRequestInformation fail non existing loan id`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { loanManagerMock.loanExists(any()) } answers { false }
+
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.loanRequestInformation("toki_toki", "").join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+    }
+
+    @Test
+    fun `loanRequestInformation success`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { loanManagerMock.loanExists(any()) } answers { true }
+
+        sifriTaub.loanRequestInformation("toki_toki", "my_special_id").join()
+
+        verify (exactly = 1) { loanManagerMock.getLoanInfo("my_special_id") }
+    }
+
+    @Test
+    fun `cancelLoanRequest fail non existing loanId`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon_the_owner") }
+        every { loanManagerMock.getLoanInfo(any()) } answers { null }
+
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.cancelLoanRequest("toki_toki", "loanIDDDD").join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+    }
+
+    @Test
+    fun `cancelLoanRequest fail loan status is not QUEUED1`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon_the_owner") }
+        every { loanManagerMock.getLoanInfo(any()) } answers { LoanRequestInformation("myLoan", listOf("b1", "b2"), "eilon_the_owner", LoanStatus.CANCELED) }
+
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.cancelLoanRequest("toki_toki", "loanID1").join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+    }
+
+    @Test
+    fun `cancelLoanRequest fail loan status is not QUEUED2`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon_the_owner") }
+        every { loanManagerMock.getLoanInfo(any()) } answers { LoanRequestInformation("myLoan", listOf("b1", "b2"), "eilon_the_owner", LoanStatus.RETURNED) }
+
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.cancelLoanRequest("toki_toki", "loanID1").join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+    }
+
+    @Test
+    fun `cancelLoanRequest fail loan status is not QUEUED3`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon_the_owner") }
+        every { loanManagerMock.getLoanInfo(any()) } answers { LoanRequestInformation("myLoan", listOf("b1", "b2"), "eilon_the_owner", LoanStatus.OBTAINED) }
+
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.cancelLoanRequest("toki_toki", "loanID1").join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+    }
+
+    @Test
+    fun `cancelLoanRequest fail loan owner is not token owner`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon_the_owner") }
+        every { loanManagerMock.getLoanInfo(any()) } answers { LoanRequestInformation("myLoan", listOf("b1", "b2"), "NOT_eilon", LoanStatus.QUEUED) }
+
+        val throwable = assertThrows<CompletionException> {
+            sifriTaub.cancelLoanRequest("toki_toki", "loanID1").join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+    }
+
+    @Test
+    fun `cancelLoanRequest success`() {
+        every { userManagerMock.isValidToken(any()) } answers { CompletableFuture.completedFuture(true) }
+        every { userManagerMock.getUserNameByToken(any()) } answers { CompletableFuture.completedFuture("eilon_the_owner") }
+        every { loanManagerMock.getLoanInfo(any()) } answers { LoanRequestInformation("myLoan", listOf("b1", "b2"), "eilon_the_owner", LoanStatus.QUEUED) }
+
+        sifriTaub.cancelLoanRequest("toki_toki", "loan_id1").join()
+
+        verify (exactly = 1) { loanManagerMock.cancelLoan("loan_id1") }
+    }
+
+
 
 }

@@ -23,7 +23,7 @@ class SifriTaubIntegrationTest {
     }
 
     @Test
-    fun `many  tokens`(){
+    fun `many  tokens`() {
         sifri.register("omer", "secret", true, 27).get()
         sifri.register("yaniv", "top_secret", true, 19).get()
         val omer_token1 = sifri.authenticate("omer", "secret").get()
@@ -71,7 +71,7 @@ class SifriTaubIntegrationTest {
     }
 
     @Test
-    fun `many books`(){
+    fun `many books`() {
         sifri.register("eilon", "secret", true, 26).get()
         val eilon_token = sifri.authenticate("eilon", "secret").get()
 
@@ -120,7 +120,7 @@ class SifriTaubIntegrationTest {
     }
 
     @Test
-    fun `many users`(){
+    fun `many users`() {
         sifri.register("omer", "secret", false, 27).get()
         sifri.register("yaniv1", "top_secret1", true, 1).get()
         sifri.register("yaniv2", "top_secret2", true, 2).get()
@@ -134,6 +134,29 @@ class SifriTaubIntegrationTest {
 
         assertEquals(User("yaniv7", true, 7) , sifri.userInformation(token, "yaniv7").get())
         assertEquals(User("omer", false, 27) , sifri.userInformation(token, "omer").get())
+    }
+
+    @Test
+    fun `submitLoanRequest cases`() {
+        var throwable = assertThrows<CompletionException> {
+            sifri.submitLoanRequest("bad token", "omer_loan", listOf("booky")).join()
+        }
+        assertThat(throwable.cause!!, isA<PermissionException>())
+
+        sifri.register("omer", "secret", false, 27).join()
+        val token = sifri.authenticate("omer", "secret").join()
+
+
+        throwable = assertThrows {
+            sifri.submitLoanRequest(token, "omer_loan", listOf("booky")).join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+
+        sifri.addBookToCatalog(token, "booky", "goody", 2).join()
+
+        val loan1 = sifri.submitLoanRequest(token, "omer_loan", listOf("booky")).join()
+
+        assertEquals(LoanRequestInformation("omer_loan", listOf("booky"), "omer", LoanStatus.QUEUED), sifri.loanRequestInformation(token, loan1).join())
     }
 
 }

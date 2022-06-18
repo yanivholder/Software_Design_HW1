@@ -11,6 +11,8 @@ interface LoanManager {
 
     fun addBook(id: String, copiesAmount: Int)
 
+    fun getBookAvailableAmount(bookId: String): Int
+
     fun bookInfoMissing(bookId: String): Boolean
 
     fun loanBook(bookId: String, copiesAmount: Int = -1)

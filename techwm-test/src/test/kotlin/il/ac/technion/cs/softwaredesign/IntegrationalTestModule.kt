@@ -16,7 +16,7 @@ class IntegrationalTestModule: KotlinModule() {
 
     override fun configure() {
         bind<LoanManager>().to<DefaultLoanManager>()
-        bind<ObtainedLoan>().to<DefaultObtainedLoan>()
+//        bind<ObtainedLoan>().to<DefaultObtainedLoan>()
         bind<LoanService>().to<LoanServiceFake>()
 
 

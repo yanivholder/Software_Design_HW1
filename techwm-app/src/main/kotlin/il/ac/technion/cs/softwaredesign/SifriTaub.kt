@@ -1,6 +1,9 @@
 package il.ac.technion.cs.softwaredesign
 
+import il.ac.technion.cs.softwaredesign.impl.DefaultLoanManager
+import il.ac.technion.cs.softwaredesign.impl.DoNothingObtainedLoan
 import java.util.concurrent.CompletableFuture
+import javax.annotation.concurrent.Immutable
 import javax.inject.Inject
 
 /**
@@ -31,7 +34,7 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
                  throw IllegalArgumentException()
              }
              userManager.generateUserTokenAndInvalidateOld(username = username)
-         }
+         }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -47,7 +50,7 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
             else{
                 CompletableFuture.completedFuture(Unit)
             }
-        }
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -79,7 +82,7 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
                     age = age
                 )
             }
-        }
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -97,15 +100,15 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun userInformation(token: String, username: String): CompletableFuture<User?> {
         return checkToken(token).thenCompose {
-            userManager.isUsernameExists(username = username).thenCompose{ exists ->
-                if (!exists){
-                    CompletableFuture.completedFuture(null)
-                }
-                else{
-                    userManager.getUserInformation(username = username)
-                }
+            userManager.isUsernameExists(username = username)
+        }.thenCompose{ exists ->
+            if (!exists){
+                CompletableFuture.completedFuture(null)
             }
-        }
+            else{
+                userManager.getUserInformation(username = username)
+            }
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -124,15 +127,15 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun addBookToCatalog(token: String, id: String, description: String, copiesAmount: Int): CompletableFuture<Unit> {
 
         return checkToken(token).thenCompose {
-            bookManager.isIdExists(id = id).thenCompose{ exists ->
-                if (exists || copiesAmount <= 0){
-                    throw IllegalArgumentException()
-                }
-                // TODO - think if i can remove this and merge loan/book Mgrs
-                loanManager.addBook(id = id, copiesAmount = copiesAmount)
-                bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
+            bookManager.isIdExists(id = id)
+        }.thenCompose{ exists ->
+            if (exists || copiesAmount <= 0){
+                throw IllegalArgumentException()
             }
-        }
+            // TODO - think if i can remove this and merge loan/book Mgrs
+            loanManager.addBook(id = id, copiesAmount = copiesAmount)
+            bookManager.addBook(id = id, description = description, copiesAmount = copiesAmount)
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -149,13 +152,13 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun getBookDescription(token: String, id: String): CompletableFuture<String> {
 
         return checkToken(token).thenCompose {
-            bookManager.isIdExists(id = id).thenCompose{ exists ->
-                if (!exists){
-                    throw IllegalArgumentException()
-                }
-                bookManager.getBookDescription(id = id)
+            bookManager.isIdExists(id = id)
+        }.thenCompose{ exists ->
+            if (!exists){
+                throw IllegalArgumentException()
             }
-        }
+            bookManager.getBookDescription(id = id)
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -172,7 +175,7 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
     fun listBookIds(token: String, n: Int = 10): CompletableFuture<List<String>> {
         return checkToken(token).thenCompose {
             bookManager.getFirstBooksByAddTime(numOfBooks = n)
-        }
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -200,18 +203,33 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun submitLoanRequest(token: String, loanName: String, bookIds: List<String>): CompletableFuture<String> {
         return checkToken(token).thenCompose {
-            for (bookId in bookIds){
-                bookManager.isIdExists(bookId).thenApply { exists ->
-                    if (!exists){
-                        throw IllegalArgumentException()
-                    }
+            checkListBooksAllExist(bookIds as MutableList<String>)
+        }.thenCompose {
+            userManager.getUserNameByToken(token)
+        }.thenApply { owner ->
+            loanManager.createNewLoan(loanName, owner, bookIds)
+        }.exceptionally { exp -> throw exp }
+    }
+
+    private fun checkListBooksAllExist(bookIds: MutableList<String>): CompletableFuture<Unit> {
+//        if (bookIds.isEmpty()) {
+//            return CompletableFuture.completedFuture(Unit)
+//        }
+//        return bookManager.isIdExists(bookIds[0]).thenCompose { exists ->
+//            if (!exists){
+//                throw IllegalArgumentException()
+//            }
+//            bookIds.removeAt(0)
+//            checkListBooksAllExist(bookIds)
+//        }.exceptionally { exp -> throw exp }
+        for (bookId in bookIds){
+            bookManager.isIdExists(bookId).thenApply { exists ->
+                if (!exists){
+                    throw IllegalArgumentException()
                 }
-            }
-            userManager.getUserNameByToken(token).thenCompose{ owner ->
-                val newLoanId = loanManager.createNewLoan(loanName, owner, bookIds)
-                CompletableFuture.completedFuture(newLoanId)
-            }
+            }.exceptionally { exp -> throw exp }
         }
+        return CompletableFuture.completedFuture(Unit)
     }
 
     /**
@@ -228,7 +246,6 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
                 throw IllegalArgumentException()
             }
             val loanInfo = loanManager.getLoanInfo(id)
-
             CompletableFuture.completedFuture(loanInfo)
         }
     }
@@ -247,16 +264,15 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun cancelLoanRequest(token: String, loanId: String): CompletableFuture<Unit> {
         return checkToken(token).thenCompose {
-            userManager.getUserNameByToken(token).thenCompose{ tokenOwner ->
-                val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
-                if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner) || (loanInfo.loanStatus != LoanStatus.QUEUED)){
-                    throw IllegalArgumentException()
-                }
-                // TODO - maybe `cancelLoan` will return a CompletableFuture<Unit> that waits on the return of all books
-                loanManager.cancelLoan(loanId)
-                CompletableFuture.completedFuture(Unit)
+            userManager.getUserNameByToken(token)
+        }.thenCompose{ tokenOwner ->
+            val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
+            if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner) || (loanInfo.loanStatus != LoanStatus.QUEUED)){
+                throw IllegalArgumentException()
             }
-        }
+            loanManager.cancelLoan(loanId)
+            CompletableFuture.completedFuture(Unit)
+        }.exceptionally { exp -> throw exp }
     }
 
     /**
@@ -268,32 +284,19 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
      */
     fun waitForBooks(token: String, loanId: String): CompletableFuture<ObtainedLoan> {
         return checkToken(token).thenCompose {
-            userManager.getUserNameByToken(token).thenCompose{ tokenOwner ->
-                val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
-                if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner)){
-                    throw IllegalArgumentException()
-                }
-                loanManager.waitForLoan(loanId)
+            userManager.getUserNameByToken(token)
+        }.thenCompose{ tokenOwner ->
+            val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
+            if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner)){
+                throw IllegalArgumentException()
             }
+            if (loanInfo.loanStatus == LoanStatus.OBTAINED || loanInfo.loanStatus == LoanStatus.CANCELED){
+                DoNothingObtainedLoan()
+            }
+            loanManager.waitForLoan(loanId)
         }
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
