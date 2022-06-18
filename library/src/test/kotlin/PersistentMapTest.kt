@@ -1,6 +1,7 @@
 package library
 
 import com.google.inject.Guice
+import com.natpryce.hamkrest.present
 import dev.misfitlabs.kotlinguice4.getInstance
 import impl.DefaultPersistentMap
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -93,6 +94,41 @@ class PersistentMapTest {
     }
 
     @Test
+    fun `put and get a lot of times`() {
+        // Arrange
+        val numberOfIterations = 1000
+
+        // Act
+        for (i in 1..numberOfIterations) {
+            val currentVal = ValueClass("", v3 = listOf(i))
+            persistentMap.put(i.toString(), currentVal.serialize()).get()
+            val res = ValueClass(persistentMap.get(i.toString()).get())
+            // Assert
+            assertEquals(currentVal, res)
+        }
+    }
+
+    @Test
+    fun `a lot of puts and then a lot of gets`() {
+        // Arrange
+        val numberOfIterations = 1000
+
+        // Act
+        for (i in 1..numberOfIterations) {
+            val currentVal = ValueClass("", v3 = listOf(i))
+            persistentMap.put(i.toString(), currentVal.serialize()).get()
+
+        }
+        for (i in 1..numberOfIterations) {
+            val currentVal = ValueClass("", v3 = listOf(i))
+            val resByteArray = persistentMap.get(i.toString()).get()
+            val res = ValueClass(resByteArray)
+            // Assert
+            assertEquals(currentVal, res)
+        }
+    }
+
+    @Test
     fun `write a non-existing key works (at start get(key) return null then it will return the value`() {
         // Arrange
         val key = "someKey"
@@ -134,7 +170,7 @@ class PersistentMapTest {
 
         // Act
         persistentMap.put(key, value.serialize()).get()
-        val res = persistentMap.exists(key)
+        val res = persistentMap.exists(key).get()
 
         // Assert
         assertEquals(res, true)
@@ -146,7 +182,7 @@ class PersistentMapTest {
         val key = "someKey"
 
         // Act
-        val res = persistentMap.exists(key)
+        val res = persistentMap.exists(key).get()
 
         // Assert
         assertEquals(res, false)
@@ -163,6 +199,7 @@ class PersistentMapTest {
 
         // Assert
         for ((key, value) in map) {
+            val tmp = ValueClass(res[key])
             assertEquals(value, ValueClass(res[key]))
         }
     }

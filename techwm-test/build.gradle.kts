@@ -13,7 +13,6 @@ dependencies {
     implementation(project(":techwm-app"))
     implementation("il.ac.technion.cs.softwaredesign", "primitive-storage-layer", externalLibraryVersion)
 
-
     implementation("com.google.inject", "guice", guiceVersion)
     implementation("dev.misfitlabs.kotlinguice4", "kotlin-guice", kotlinGuiceVersion)
 
