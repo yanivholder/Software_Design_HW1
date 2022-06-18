@@ -77,6 +77,8 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
     private fun putMainLogic(key: String, serializedValue: ByteArray, isMasterKey: Boolean): CompletableFuture<Void> {
         val futuresList: MutableList<CompletableFuture<Unit>> = mutableListOf()
         var currentKey = key
+
+
         var currentValueSize = serializedValue.size
         var numberOfParts = serializedValue.size / (secureStorageMaxSize - metedataSize)
         if (serializedValue.size % (secureStorageMaxSize - metedataSize) > 0) {
@@ -90,18 +92,29 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
             sizeHeader, 0,
             serializedNumberOfParts.size
         )
-        var writeFuture = secureStorage.write(
-            key = serialize(key),
-            value = sizeHeader
-        )
-        futuresList.add(writeFuture)
 
         var currentIteration = 0
+
+        var writeFuture: CompletableFuture<Unit>
+        if (isMasterKey) {
+            currentKey = increaseLex(currentKey)
+            writeFuture = secureStorage.write(
+                key = serialize(currentKey),
+                value = sizeHeader
+            )
+        } else {
+            writeFuture = secureStorage.write(
+                key = serialize(key + currentIteration.toString()),
+                value = sizeHeader
+            )
+        }
+        futuresList.add(writeFuture)
+        currentIteration++
 
         while (currentValueSize > 0) {
             val relevantPart = ByteArray(secureStorageMaxSize)
             System.arraycopy(
-                serializedValue, currentIteration * (secureStorageMaxSize - metedataSize),
+                serializedValue, (currentIteration - 1) * (secureStorageMaxSize - metedataSize),
                 relevantPart, 0,
                 if (currentValueSize >= (secureStorageMaxSize - metedataSize)) (secureStorageMaxSize - metedataSize) else currentValueSize
             )
@@ -120,14 +133,13 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
                     key = serialize(currentKey),
                     value = relevantPart
                 )
-                futuresList.add(writeFuture)
             } else {
                 writeFuture = secureStorage.write(
                     key = serialize(key + currentIteration.toString()),
                     value = relevantPart
                 )
-                futuresList.add(writeFuture)
             }
+            futuresList.add(writeFuture)
             currentIteration++
         }
         return CompletableFuture.allOf(*futuresList.toTypedArray())
@@ -154,14 +166,17 @@ class DefaultPersistentMap @Inject constructor(private val secureStorage: Secure
     }
 
     private fun getMainLogic(key: String, isMasterKey: Boolean): CompletableFuture<ByteArray?> {
-        return secureStorage.read(serialize(key)).thenCompose { sizeHeader ->
+        var currentKey = if(isMasterKey) {
+            serialize(increaseLex(key))
+        } else {
+            serialize(key + 0.toString())
+        }
+        return secureStorage.read(currentKey).thenCompose { sizeHeader ->
             val listOfFutureParts: MutableList<CompletableFuture<ByteArray?>> = mutableListOf()
             if (sizeHeader == null) return@thenCompose CompletableFuture.completedFuture(null)
             val numberOfParts = deserialize(sizeHeader) as Int
 
-            var currentKey = serialize(key)
-
-            for (currentIteration in 0 until numberOfParts) {
+            for (currentIteration in 1..numberOfParts) {
                 currentKey = if (isMasterKey) {
                     serialize(increaseLex(deserialize(currentKey) as String))
                 } else {
