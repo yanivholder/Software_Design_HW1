@@ -33,10 +33,10 @@ class AppTestModule: KotlinModule() {
         return mockk(relaxed = true)
     }
 
-    @Provides
-    fun provideLoanService(): LoanService {
-        return mockk(relaxed = true)
-    }
+//    @Provides
+//    fun provideLoanService(): LoanService {
+//        return mockk(relaxed = true)
+//    }
 
 //    @Provides
 //    fun providePersistentMap(): PersistentMap {

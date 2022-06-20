@@ -1,3 +1,4 @@
+import Fakes.SecureStorageFake
 import com.google.inject.Provides
 import dev.misfitlabs.kotlinguice4.KotlinModule
 import il.ac.technion.cs.softwaredesign.storage.SecureStorage
@@ -9,6 +10,7 @@ import java.util.concurrent.CompletableFuture
 class LibraryProdModule: KotlinModule() {
     override fun configure() {
         install(SecureStorageModule())
+//        bind<SecureStorage>().to<SecureStorageFake>()
         bind<PersistentMap>().to<DefaultPersistentMap>()
     }
 

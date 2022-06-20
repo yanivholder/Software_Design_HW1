@@ -1,5 +1,6 @@
 package il.ac.technion.cs.softwaredesign
 
+import Fakes.LoanServiceFake
 import com.google.inject.Guice
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.isA
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Assertions.assertEquals
 import java.util.concurrent.CompletionException
+import kotlin.concurrent.thread
 
 
 class SifriTaubIntegrationTest {
@@ -157,6 +159,234 @@ class SifriTaubIntegrationTest {
         val loan1 = sifri.submitLoanRequest(token, "omer_loan", listOf("booky")).join()
 
         assertEquals(LoanRequestInformation("omer_loan", listOf("booky"), "omer", LoanStatus.QUEUED), sifri.loanRequestInformation(token, loan1).join())
+
+        val obtainedLoan = sifri.waitForBooks(token, loan1).join()
+
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token, loan1).join().loanStatus)
+
+        obtainedLoan.returnBooks().join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token, loan1).join().loanStatus)
+
+    }
+
+    @Test
+    fun `loan requests easy`(){
+        sifri.register("u1", "p1", false, 27).join()
+        val token1 = sifri.authenticate("u1", "p1").join()
+
+        sifri.register("u2", "p2", false, 27).join()
+        val token2 = sifri.authenticate("u2", "p2").join()
+
+        sifri.register("u3", "p3", false, 27).join()
+        val token3 = sifri.authenticate("u3", "p3").join()
+
+        sifri.addBookToCatalog(token1, "b1", "d1", 1).join()
+        sifri.addBookToCatalog(token1, "b2", "d2", 1).join()
+        sifri.addBookToCatalog(token2, "b3", "d3", 1).join()
+        sifri.addBookToCatalog(token2, "b4", "d4", 1).join()
+        sifri.addBookToCatalog(token3, "b5", "d5", 1).join()
+        sifri.addBookToCatalog(token3, "b6", "d6", 1).join()
+
+        val loanId1 = sifri.submitLoanRequest(token1, "l1", listOf("b5", "b6")).join()
+        val loanId2 = sifri.submitLoanRequest(token2, "l2", listOf("b1", "b2")).join()
+        val loanId3 = sifri.submitLoanRequest(token3, "l3", listOf("b3", "b4")).join()
+
+        val throwable = assertThrows<CompletionException> {
+            sifri.waitForBooks(token1, loanId2).join()
+        }
+        assertThat(throwable.cause!!, isA<IllegalArgumentException>())
+
+
+        val obtainedLoan1 = sifri.waitForBooks(token1, loanId1).join()
+        val obtainedLoan2 = sifri.waitForBooks(token2, loanId2).join()
+        val obtainedLoan3 = sifri.waitForBooks(token3, loanId3).join()
+
+        obtainedLoan1.returnBooks().join()
+        obtainedLoan2.returnBooks().join()
+        obtainedLoan3.returnBooks().join()
+
+        /**
+         * check print of LoanServiceFake to see that:
+         *
+         * b5 loaned
+         * b6 loaned
+         * b1 loaned
+         * b2 loaned
+         * b3 loaned
+         * b4 loaned
+         * b5 returned
+         * b6 returned
+         * b1 returned
+         * b2 returned
+         * b3 returned
+         * b4 returned
+         * was printed
+         */
+    }
+
+    @Test
+    fun `loan requests 3 waits for 2 waits for 1`(){
+        sifri.register("u1", "p1", false, 27).join()
+        val token1 = sifri.authenticate("u1", "p1").join()
+
+        sifri.register("u2", "p2", false, 27).join()
+        val token2 = sifri.authenticate("u2", "p2").join()
+
+        sifri.register("u3", "p3", false, 27).join()
+        val token3 = sifri.authenticate("u3", "p3").join()
+
+        sifri.addBookToCatalog(token1, "b1", "d1", 1).join()
+        sifri.addBookToCatalog(token1, "b2", "d2", 1).join()
+        sifri.addBookToCatalog(token2, "b3", "d3", 1).join()
+        sifri.addBookToCatalog(token2, "b4", "d4", 1).join()
+        sifri.addBookToCatalog(token3, "b5", "d5", 1).join()
+        sifri.addBookToCatalog(token3, "b6", "d6", 1).join()
+
+        val loanId1 = sifri.submitLoanRequest(token1, "l1", listOf("b1", "b2")).join()
+        val loanId2 = sifri.submitLoanRequest(token2, "l2", listOf("b2", "b3")).join()
+        val loanId3 = sifri.submitLoanRequest(token3, "l3", listOf("b3", "b4")).join()
+
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        var obtainedLoan1 = sifri.waitForBooks(token1, loanId1).join()
+        val obtainedLoan2 = sifri.waitForBooks(token2, loanId2)
+        val obtainedLoan3 = sifri.waitForBooks(token3, loanId3)
+
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        obtainedLoan1.returnBooks().join()
+        obtainedLoan1 = sifri.waitForBooks(token1, loanId1).join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        obtainedLoan2.join().returnBooks().join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        obtainedLoan3.join().returnBooks().join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        obtainedLoan1.returnBooks().join()
+
+        /**
+         * check print of LoanServiceFake to see that:
+         *
+         * b1 loaned
+         * b2 loaned
+         * b1 returned
+         * b2 returned
+         * b2 loaned
+         * b3 loaned
+         * b2 returned
+         * b3 returned
+         * b3 loaned
+         * b4 loaned
+         * b3 returned
+         * b4 returned
+         * was printed
+         */
+
+    }
+
+    @Test
+    fun `loan requests 3 and 4 both wait for 2 and 1`(){
+        sifri.register("u1", "p1", false, 27).join()
+        val token1 = sifri.authenticate("u1", "p1").join()
+
+        sifri.register("u2", "p2", false, 27).join()
+        val token2 = sifri.authenticate("u2", "p2").join()
+
+        sifri.register("u3", "p3", false, 27).join()
+        val token3 = sifri.authenticate("u3", "p3").join()
+
+        sifri.addBookToCatalog(token1, "b1", "d1", 1).join()
+        sifri.addBookToCatalog(token1, "b2", "d2", 1).join()
+        sifri.addBookToCatalog(token2, "b3", "d3", 1).join()
+        sifri.addBookToCatalog(token2, "b4", "d4", 1).join()
+        sifri.addBookToCatalog(token3, "b5", "d5", 1).join()
+        sifri.addBookToCatalog(token3, "b6", "d6", 1).join()
+
+        val loanId1 = sifri.submitLoanRequest(token1, "l1", listOf("b1", "b2")).join()
+        val loanId2 = sifri.submitLoanRequest(token2, "l2", listOf("b3", "b4")).join()
+        val loanId3 = sifri.submitLoanRequest(token3, "l3", listOf("b1", "b3")).join()
+
+        var obtainedLoan1 = sifri.waitForBooks(token1, loanId1).join()
+
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        val obtainedLoan2 = sifri.waitForBooks(token2, loanId2).join()
+
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        val obtainedLoan3 = sifri.waitForBooks(token3, loanId3)
+
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+
+        val loanId4 = sifri.submitLoanRequest(token3, "l4", listOf("b2", "b4")).join()
+
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId4).join().loanStatus)
+
+
+        obtainedLoan1.returnBooks().join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId4).join().loanStatus)
+
+        obtainedLoan1 = sifri.waitForBooks(token1, loanId1).join()
+
+
+
+        val obtainedLoan4 = sifri.waitForBooks(token3, loanId4)
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+        assertEquals(LoanStatus.OBTAINED, sifri.loanRequestInformation(token1, loanId2).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId4).join().loanStatus)
+
+
+        obtainedLoan2.returnBooks().join()
+
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId4).join().loanStatus)
+
+
+        obtainedLoan3.join().returnBooks().join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId3).join().loanStatus)
+        assertEquals(LoanStatus.QUEUED, sifri.loanRequestInformation(token1, loanId4).join().loanStatus)
+
+        obtainedLoan1.returnBooks().join()
+
+        obtainedLoan4.join().returnBooks().join()
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId4).join().loanStatus)
+
+        assertEquals(LoanStatus.RETURNED, sifri.loanRequestInformation(token1, loanId1).join().loanStatus)
+
+
     }
 
 }

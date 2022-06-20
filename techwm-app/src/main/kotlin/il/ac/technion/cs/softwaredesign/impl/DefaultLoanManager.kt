@@ -1,10 +1,7 @@
 package il.ac.technion.cs.softwaredesign.impl
 //package il.ac.technion.cs.softwaredesign
 import Fakes.LoanServiceFake
-import il.ac.technion.cs.softwaredesign.LoanManager
-import il.ac.technion.cs.softwaredesign.LoanStatus
-import il.ac.technion.cs.softwaredesign.LoanRequestInformation
-import il.ac.technion.cs.softwaredesign.ObtainedLoan
+import il.ac.technion.cs.softwaredesign.*
 import il.ac.technion.cs.softwaredesign.loan.LoanService
 import java.time.temporal.TemporalAmount
 import java.util.*
@@ -16,14 +13,12 @@ import kotlin.collections.HashMap
 typealias LoanId = String
 typealias BookId = String
 
-data class LoanInfo(var loanId: String = "N.A", var loanReq: LoanRequestInformation = LoanRequestInformation("", listOf(""), "", LoanStatus.QUEUED))
+data class LoanInfo(var loanId: String = "N.A", var loanReq: LoanRequestInformation = LoanRequestInformation("", listOf(""), "", LoanStatus.QUEUED), val future: CompletableFuture<ObtainedLoan>, var waitedOn: Boolean = false)
 data class BookCacheItem (val libraryTotalAmount: Int, val takenTotal: Int)
 
 
 class DefaultLoanManager @Inject constructor(private val loanService: LoanService) : LoanManager{
 
-    // TODO - solve this
-//    private val loanService: LoanServiceFake = LoanServiceFake()
 
     private var loanIdRunner: Int = 0
     private var queue: LinkedList<LoanInfo> = LinkedList(listOf())
@@ -46,7 +41,7 @@ class DefaultLoanManager @Inject constructor(private val loanService: LoanServic
         return false
     }
 
-    override fun loanBook(bookId: String, copiesAmount: Int){
+    override fun loanBook(bookId: String, copiesAmount: Int) {
         if (copiesAmount > 0){
             // we are dealing with a post-crash system
             bookLibraryAmountCache[bookId] = BookCacheItem(copiesAmount, 1 /* for this loan */)
@@ -60,7 +55,34 @@ class DefaultLoanManager @Inject constructor(private val loanService: LoanServic
         }
     }
 
-    override fun returnBook(bookId: String){
+    /** Used ONLY for queue head */
+    private fun canCompleteLoan(loanId: String): Boolean{
+        assert(queue.first.loanId == loanId)
+        // get book list
+        val bookList = queue.first.loanReq.requestedBooks
+        // check that all have positive amount - hence loan can be obtained
+        bookList.forEach {
+            if (getBookAvailableAmount(it) == 0){
+                return false
+            }
+        }
+        return true
+    }
+
+    /** Used ONLY for queue head */
+    private fun completeLoan(loanId: String): Unit {
+        assert(queue.first.loanId == loanId)
+        // get book list
+        val bookList = queue.first.loanReq.requestedBooks
+        // call `loanBook` for each
+        bookList.forEach { loanBook(it) }
+
+        // complete it's future
+//        println("load "+loanId+"future completed")
+        queue.first.future.complete(DefaultObtainedLoan(loanId, this))
+    }
+
+    override fun returnBook(bookId: String) {
         // we know that a book is being returned then the system did not crash
         val cachedBook = bookLibraryAmountCache[bookId]
         if (cachedBook != null) {
@@ -72,17 +94,17 @@ class DefaultLoanManager @Inject constructor(private val loanService: LoanServic
         }
     }
 
+    override fun loanExists(loanId: String): Boolean{
+        return ( (dequeuedLoans[loanId] != null) || (queue.firstOrNull { it.loanId == loanId } != null) )
+    }
+
 
     override fun createNewLoan(loanName: String, ownerId: String, bookIds: List<String>): String{
         val newLoanId = loanIdRunner.toString()
-        val newLoan = LoanInfo(newLoanId, loanReq = LoanRequestInformation(loanName, bookIds, ownerId, LoanStatus.QUEUED))
+        val newLoan = LoanInfo(newLoanId, loanReq = LoanRequestInformation(loanName, bookIds, ownerId, LoanStatus.QUEUED), CompletableFuture<ObtainedLoan>())
         queue.addLast(newLoan)
         loanIdRunner += 1
         return newLoanId
-    }
-
-    override fun loanExists(loanId: String): Boolean{
-        return ( (dequeuedLoans[loanId] != null) || (queue.firstOrNull { it.loanId == loanId } != null) )
     }
 
     override fun getLoanInfo(loanId: String): LoanRequestInformation ?{
@@ -119,12 +141,54 @@ class DefaultLoanManager @Inject constructor(private val loanService: LoanServic
 
     }
 
-//    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> {
-//        return CompletableFuture<ObtainedLoan>().thenApply {
-//            // TODO - try to get all the books, and try again each time a book is returned
-//            DefaultObtainedLoan(loanId, this)
-//        }
-//    }
+    fun freeQueueWaiters() {
+        while (!queue.isEmpty() && canCompleteLoan(queue.first.loanId)){
+            // remove from Queue
+            completeLoan(queue.first.loanId)
 
-    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> = TODO()
+            val elem = queue.first()
+            queue.removeFirst()
+//            queue.remove(elem)
+            val loanReq = elem.loanReq
+            // keep loanReq state as QUEUED so we know if has been waited on already or not, only waiter can change to OBTAINED
+            dequeuedLoans[elem.loanId] = LoanRequestInformation(loanReq.loanName, loanReq.requestedBooks, loanReq.ownerUserId, LoanStatus.QUEUED)
+        }
+    }
+
+    // in queue or in dequeued under status = QUEUED (which means it was given the books but was not waited for yet)
+    private fun isLoanStatusQueued(loanId: String): Boolean {
+        return ((queue.firstOrNull{it.loanId == loanId} != null) || (dequeuedLoans[loanId] != null && dequeuedLoans[loanId]!!.loanStatus == LoanStatus.QUEUED))
+    }
+
+    override fun waitForLoan(loanId: String): CompletableFuture<ObtainedLoan> {
+        // if the loan status is LoanStatus.CANCELED or Obtained or Returned return a DoNothingObtainedLoan
+        if (!isLoanStatusQueued(loanId)){
+            return CompletableFuture.completedFuture(DefaultObtainedLoan(loanId, null))
+        }
+        if (queue.firstOrNull { it.loanId == loanId } != null){
+            val elem = queue.first { it.loanId == loanId }
+            freeQueueWaiters()
+            if (dequeuedLoans[loanId] == null) {
+                return elem.future
+            }
+        }
+
+        // maybe it was freed from queue by a book returner but was not "waited on" yet
+        assert(dequeuedLoans[loanId] != null)
+        // we know loan is queued, assert this fact
+        assert(dequeuedLoans[loanId]!!.loanStatus == LoanStatus.QUEUED)
+        // if it's in dequeued, that means it was freed from queue and also waited (now) so we can change status
+        val loanReq = dequeuedLoans[loanId]!!
+        dequeuedLoans[loanId] = LoanRequestInformation(loanReq.loanName, loanReq.requestedBooks, loanReq.ownerUserId, LoanStatus.OBTAINED)
+//        println("loan "+loanId+" obtained")
+        freeQueueWaiters()
+        return CompletableFuture.completedFuture(DefaultObtainedLoan(loanId, this))
+
+
+//        // else (if it's Queued) return it's future (that goes with it)
+//        assert(queue.firstOrNull { it.loanId == loanId } != null)
+//        val elem = queue.first { it.loanId == loanId }
+//        freeQueueWaiters()
+//        return elem.future
+    }
 }

@@ -6,10 +6,12 @@ import java.util.concurrent.CompletableFuture
 class LoanServiceFake : LoanService {
 
     override fun loanBook(id: String): CompletableFuture<Unit>{
+        println(id.plus(" loaned"))
         return CompletableFuture.completedFuture(Unit)
     }
 
     override fun returnBook(id: String): CompletableFuture<Unit> {
+        println(id.plus(" returned"))
         return CompletableFuture.completedFuture(Unit)
     }
 }

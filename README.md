@@ -4,12 +4,8 @@
 * Eilon Kornboim, 315677880
 * Yaniv Holder, 207025297
 
-## Notes
-Running the minimal staff test (TechWorkloadManagerStaffTest) doesn't pass because our write involves writing, 
-reading a unique (user keys are wrapped differently) master-key and then writing the user-key 
-(for persisting all keys in system), this causes our middle read to fail while expecting to read something that was written.
-
 ### Implementation Summary
+#### HW1
 SifriTaub has two helper classes to manage its functionality:
 UserMamager & Book Manager - 
 * BookManager is in charge of registering and querying books
@@ -22,27 +18,33 @@ All three ([User/Book/Token]Manager) use PersistentMap for persisting their data
 * PersistentMap is an abstraction for the SecureStorage, 
 giving us unlimited sized values and also the option to retrieve the entire map.
 
+#### HW2
+- loanManager is used for keeping track of loan requests and available amount of each book
+- Persisntent map now work in a parallal manner, reads all needed key entries needed and when all return it stitches the parts together (the 100Byte parts)
+- when a user tries to wait for books or return them, the queue is checked and futures (belonging to loanReq) are completed if possible.
 
 ### Testing Summary
-UserManager, BookManager and TokenStore were all unit-tested using a fully functional mock of the PersistentMap
+#### Of HW1
+- UserManager, BookManager and TokenStore were all unit-tested using a fully functional mock of the PersistentMap
 That is because it's very easy to supply said fake (a simple map).
 
-PersistentMap was unit-tested using a fully functional mock of the SecureStorage (also easy to implement)
+- PersistentMap was unit-tested using a fully functional mock of the SecureStorage (also easy to implement)
 
-SifriTaub was unit-tested using a mock for both the UserManager and BookManager since their logic is not 
+- SifriTaub was unit-tested using a mock for both the UserManager and BookManager since their logic is not 
 trivial and could not be mocked without repeating their code
 
-Integration tests we did check the whole system together.
+- Integration tests we did check the whole system together.
+
+####- Added tests for HW2:
+- loanManager unit tests using a LoanService Fake
+- added unit tests to sifriTaub for new API
+- added integration test for the new functionalities
 
 
 
-### Difficulties
-Please list any technological difficulties you had while working on this assignment, especially
-with the tools used: Kotlin, JUnit, MockK, Guice, and Gradle.
-Guice was the most problematic, and we think more example should be given for future exercises.
-Besides Guice, all the above worked fine and easy to manage
+### Difficulties HW2
+none
 
 ### Feedback
-Cool assignment, made us use what was taught and understand where it comes to use.
-Guice took a lot of time to operate and that too bad because the concept was clear 
-all along, and it didn't teach much to play around with configurations till it works.
+good assignment, but should be more clear in the PDF, there were some gray areas.
+stuff like "cant use threads" should be said in advance and not piazza

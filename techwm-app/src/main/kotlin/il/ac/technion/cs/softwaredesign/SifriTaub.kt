@@ -1,7 +1,6 @@
 package il.ac.technion.cs.softwaredesign
 
 import il.ac.technion.cs.softwaredesign.impl.DefaultLoanManager
-import il.ac.technion.cs.softwaredesign.impl.DoNothingObtainedLoan
 import java.util.concurrent.CompletableFuture
 import javax.annotation.concurrent.Immutable
 import javax.inject.Inject
@@ -211,25 +210,34 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
         }.exceptionally { exp -> throw exp }
     }
 
+    private fun listOfFuturesToFutureOfList(list: MutableList<CompletableFuture<Boolean>>): CompletableFuture<MutableList<Boolean>> {
+        if (list.size == 0) return CompletableFuture.completedFuture(mutableListOf())
+        else {
+            return list[0].thenCompose { headValue ->
+                list.removeAt(0)
+                listOfFuturesToFutureOfList(list).thenCompose { returnedList ->
+                    returnedList.add(headValue)
+                    CompletableFuture.completedFuture(returnedList)
+                }
+            }
+        }
+    }
+
     private fun checkListBooksAllExist(bookIds: MutableList<String>): CompletableFuture<Unit> {
-//        if (bookIds.isEmpty()) {
-//            return CompletableFuture.completedFuture(Unit)
-//        }
-//        return bookManager.isIdExists(bookIds[0]).thenCompose { exists ->
-//            if (!exists){
-//                throw IllegalArgumentException()
-//            }
-//            bookIds.removeAt(0)
-//            checkListBooksAllExist(bookIds)
-//        }.exceptionally { exp -> throw exp }
-        for (bookId in bookIds){
-            bookManager.isIdExists(bookId).thenApply { exists ->
-                if (!exists){
+
+        val futureList: MutableList<CompletableFuture<Boolean>> = mutableListOf()
+
+        for (bookId in bookIds) {
+            futureList.add(bookManager.isIdExists(bookId))
+        }
+
+        return listOfFuturesToFutureOfList(futureList).thenApply { list ->
+            list.forEach {
+                if (!it){
                     throw IllegalArgumentException()
                 }
-            }.exceptionally { exp -> throw exp }
+            }
         }
-        return CompletableFuture.completedFuture(Unit)
     }
 
     /**
@@ -289,9 +297,6 @@ class SifriTaub @Inject constructor(private val userManager: UserManager, privat
             val loanInfo: LoanRequestInformation? = loanManager.getLoanInfo(loanId)
             if ((loanInfo == null) || (loanInfo.ownerUserId != tokenOwner)){
                 throw IllegalArgumentException()
-            }
-            if (loanInfo.loanStatus == LoanStatus.OBTAINED || loanInfo.loanStatus == LoanStatus.CANCELED){
-                DoNothingObtainedLoan()
             }
             loanManager.waitForLoan(loanId)
         }

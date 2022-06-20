@@ -4,33 +4,28 @@ interface PersistentMap {
 
     /**
      *
-     * @param ?
+     * @param key - the key to use for put
+     * @param value - the value to save under this key
      *
-     * @throws ?
      */
     fun put(key: String, value: ByteArray): CompletableFuture<Unit>
 
     /**
      *
-     * @param ?
+     * @param key - get the value corresponding to this key
      *
-     * @throws ?
      */
     fun get(key: String): CompletableFuture<ByteArray?>
 
     /**
      *
-     * @param ?
+     * @param key - check if there's a key like this in the map
      *
-     * @throws ?
      */
     fun exists(key: String): CompletableFuture<Boolean>
 
     /**
-     *
-     * @param ?
-     *
-     * @throws ?
+     * get the entire map, keys and values
      */
     fun getAllMap(): CompletableFuture<Map<String, ByteArray?>>
 }
